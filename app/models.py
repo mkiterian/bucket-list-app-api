@@ -38,3 +38,19 @@ class Bucketlist(db.Model):
         self.description = description
         self.owner_id = owner_id
 
+
+class Item(db.Model):
+    '''
+    Defines properties for a bucketlist item, used to create items table
+    '''
+    __tablename__ = 'items'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(80), unique=True)
+    description = db.Column(db.String(200), unique=True)
+    bucket_id = db.Column(db.Integer, db.ForeignKey('bucketlists.id'))
+
+    def __init__(self, title, description, bucket_id):
+        self.title = title
+        self.description = description
+        self.bucket_id = bucket_id
+
