@@ -1,6 +1,5 @@
 from app import db
 
-
 class User(db.Model):
     '''
     Defines properties for a user to generate users table in db
