@@ -27,7 +27,7 @@ class Bucketlist(db.Model):
     __tablename__ = 'bucketlists'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    description = db.Column(db.String(200), unique=True)
+    description = db.Column(db.String(200))
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     items = db.relationship(
         'Item', backref='bucketlist', lazy='dynamic')
@@ -37,6 +37,9 @@ class Bucketlist(db.Model):
         self.description = description
         self.owner_id = owner_id
 
+    def __str__(self):
+        return self.name
+
 
 class Item(db.Model):
     '''
@@ -45,11 +48,14 @@ class Item(db.Model):
     __tablename__ = 'items'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(80), unique=True)
-    description = db.Column(db.String(200), unique=True)
+    description = db.Column(db.String(200))
     bucket_id = db.Column(db.Integer, db.ForeignKey('bucketlists.id'))
 
     def __init__(self, title, description, bucket_id):
         self.title = title
         self.description = description
         self.bucket_id = bucket_id
+
+    def __str__(self):
+        return self.title
 
