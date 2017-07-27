@@ -39,4 +39,12 @@ class UserTest(unittest.TestCase):
         response = self.client.post('/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
         self.assertTrue(response.status_code == 200)
 
+    def test_login_success_response_has_token(self):
+        user = {
+            "username": self.saved_user.username,
+            "password": self.saved_user.password
+        }
+        response = self.client.post('/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
+        self.assertTrue(b'access_token' in response.data)
+
     
