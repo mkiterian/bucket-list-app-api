@@ -47,10 +47,18 @@ class UserTest(unittest.TestCase):
         response = self.client.post('/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
         self.assertTrue(b'access_token' in response.data)
 
-    def test_wrong_login_credentials_returns_message(self):
+    def test_wrong_login_credentials_returns_correct_message(self):
         user = {
             "username": "john",
             "password": "dorian"
+        }
+        response = self.client.post('/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
+        self.assertTrue(b'Invalid credentials' in response.data)
+
+    def test_empty_submit_returns_correct_message(self):
+        user = {
+            "username": "",
+            "password": ""
         }
         response = self.client.post('/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
         self.assertTrue(b'Invalid credentials' in response.data)
