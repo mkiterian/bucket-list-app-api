@@ -1,8 +1,11 @@
-from app import app, db
-from app.models import User, Bucketlist, Item
 from flask_sqlalchemy import SQLAlchemy
 import unittest
 import json
+from passlib.hash import bcrypt
+
+from app import app, db
+from app.models import User, Bucketlist, Item
+
 
 
 class UserTest(unittest.TestCase):
@@ -24,10 +27,10 @@ class UserTest(unittest.TestCase):
             "confirm_password": "wicked"
         }
 
-        self.saved_user = User("tyrion", "tyrion@gmail.com", "lion")
+        self.saved_user = User("tyrion", "tyrion@gmail.com", bcrypt.hash("lion", rounds=12))
         db.session.add(self.saved_user)
         db.session.commit()
- 
+
     def tearDown(self):
         db.session.remove
         db.drop_all()
@@ -35,17 +38,19 @@ class UserTest(unittest.TestCase):
     def test_login_returns_ok_status_code(self):
         user = {
             "username": self.saved_user.username,
-            "password": self.saved_user.password
+            "password": "lion"
         }
-        response = self.client.post('/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
+        response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
         self.assertTrue(response.status_code == 200)
 
     def test_login_success_response_has_token(self):
         user = {
             "username": self.saved_user.username,
-            "password": self.saved_user.password
+            "password": "lion"
         }
-        response = self.client.post('/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
+        response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
         self.assertTrue(b'access_token' in response.data)
 
     def test_wrong_login_credentials_returns_correct_message(self):
@@ -53,7 +58,8 @@ class UserTest(unittest.TestCase):
             "username": "john",
             "password": "dorian"
         }
-        response = self.client.post('/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
+        response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
         self.assertTrue(b'Invalid credentials' in response.data)
 
     def test_empty_submit_returns_correct_message(self):
@@ -61,17 +67,26 @@ class UserTest(unittest.TestCase):
             "username": "",
             "password": ""
         }
-        response = self.client.post('/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
+        response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
         self.assertTrue(b'Invalid credentials' in response.data)
 
     def test_register_returns_ok_status_code(self):
         user = self.temp_user
-        response = self.client.post('/api/v1/auth/register', data=json.dumps(user), headers=self.headers)
+        response = self.client.post(
+            '/api/v1/auth/register', data=json.dumps(user), headers=self.headers)
         self.assertTrue(response.status_code == 200)
 
     def test_succesful_register_contains_success_message(self):
         user = self.temp_user
-        response = self.client.post('/api/v1/auth/register', data=json.dumps(user), headers=self.headers)
+        response = self.client.post(
+            '/api/v1/auth/register', data=json.dumps(user), headers=self.headers)
         self.assertTrue(b'user successfully registered!' in response.data)
 
-    
+    def test_register_password_doesnt_match_confirm_message(self):
+        user = self.temp_user
+        user['confirm_password'] = 'wrong'
+        response = self.client.post(
+            '/api/v1/auth/register', data=json.dumps(user), headers=self.headers)
+        self.assertTrue(b'Make password should match '
+                        b'confirm password' in response.data)
