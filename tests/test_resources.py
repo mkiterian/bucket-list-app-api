@@ -63,4 +63,9 @@ class UserTest(unittest.TestCase):
         response = self.client.post('/api/v1/auth/login', data=json.dumps(user), headers=self.headers)
         self.assertTrue(b'Invalid credentials' in response.data)
 
+    def test_register_returns_ok_status_code(self):
+        user = self.temp_user
+        response = self.client.post('/api/v1/auth/register', data=json.dumps(user), headers=self.headers)
+        self.assertTrue(response.status_code == 200)
+
     
