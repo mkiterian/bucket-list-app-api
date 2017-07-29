@@ -3,7 +3,7 @@ from flask_restful import Api, Resource, abort, reqparse
 from app import app, db
 from .models import Bucketlist, Item, User
 
-api = Api(app)
+api = Api(app, prefix='/api/v1')
 
 def verify(username, password):
     if not (username and password):
@@ -23,3 +23,23 @@ def identity(payload):
 
 
 jwt = JWT(app, verify, identity)
+
+class UserResource(Resource):
+    '''
+    Defines handlers for get, post and put user requests
+    '''
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('username', type=str, required=True, location='json')
+        parser.add_argument('email', type=str, required=True, location='json')
+        parser.add_argument('password', type=str, required=True, location='json')
+        parser.add_argument('confirm_password', type=str, required=True, location='json')
+
+        args = parser.parse_args(strict=True)
+        if args['password'] == args['confirm_password']:
+            user = User(args['username'], args['email'], args['password'])
+            db.session.add(user)
+            db.session.commit()
+            return {'message': 'user successfully registered!'}
+
+api.add_resource(UserResource, '/auth/register')
