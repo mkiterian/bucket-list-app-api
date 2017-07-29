@@ -30,6 +30,7 @@ class UserTest(unittest.TestCase):
  
     def tearDown(self):
         db.session.remove
+        db.drop_all()
 
     def test_login_returns_ok_status_code(self):
         user = {
@@ -67,5 +68,10 @@ class UserTest(unittest.TestCase):
         user = self.temp_user
         response = self.client.post('/api/v1/auth/register', data=json.dumps(user), headers=self.headers)
         self.assertTrue(response.status_code == 200)
+
+    def test_succesful_register_contains_success_message(self):
+        user = self.temp_user
+        response = self.client.post('/api/v1/auth/register', data=json.dumps(user), headers=self.headers)
+        self.assertTrue(b'user successfully registered!' in response.data)
 
     
