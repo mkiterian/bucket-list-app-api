@@ -101,7 +101,7 @@ class BucketlistResource(Resource):
 
         args = parser.parse_args(strict=True)
         if len(args['name'].strip()) == 0 or len(
-            args['description'].strip()) == 0:
+                args['description'].strip()) == 0:
             return {'message': 'empty strings not allowed'}
         else:
             new_bucketlist = Bucketlist(
@@ -122,12 +122,19 @@ class BucketlistResource(Resource):
         args = parser.parse_args(strict=True)
 
         bucketlist = Bucketlist.query.filter_by(id=id).first()
-        bucketlist.name = args['name']
-        bucketlist.description = args['description']
+        if bucketlist is not None:
+            if len(args['name'].strip()) == 0 or len(
+                    args['description'].strip()) == 0:
+                return {'message': 'empty strings not allowed'}
+            else:
+                bucketlist.name = args['name']
+                bucketlist.description = args['description']
 
-        db.session.merge(bucketlist)
-        db.session.commit()
-        return {'message': 'bucketlist updated successfully'}
+                db.session.merge(bucketlist)
+                db.session.commit()
+                return {'message': 'bucketlist updated successfully'}
+        else:
+            return {'message': 'does not exist'}
 
 
 api.add_resource(UserResource, '/auth/register')
