@@ -47,14 +47,13 @@ class BucketlistResourceTest(BaseTest):
     def tearDown(self):
         super(BucketlistResourceTest, self).tearDown()
 
+    #view bucketlists tests
     def test_view_bucketlists_status_code_is_ok(self):
-        
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
             headers=self.headers)
         self.assertEqual(response.status_code, 200)
-    
-    
+
     def test_if_bucketlist_name_is_returned(self):
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
@@ -88,7 +87,7 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists/{}'.format(self.bucketlist_one_id),
             data=json.dumps(self.user),
             headers=self.headers)
-        
+
         self.assertTrue(b'bucketlist_one' in response.data)
 
     def test_only_one_bucketlist_is_returned_given_id(self):
@@ -96,7 +95,7 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists/{}'.format(self.bucketlist_one_id),
             data=json.dumps(self.user),
             headers=self.headers)
-        
+
         self.assertEqual(response.data.count(b'id'), 1)
 
     def test_response_message_for_non_existent_id(self):
@@ -106,6 +105,7 @@ class BucketlistResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'requested id does not exist' in response.data)
 
+    #create bucketlist tests
     def test_bucketlist_created_successfully_message(self):
         new_bucketlist = {
             "name": "new bucketlist",
@@ -151,19 +151,41 @@ class BucketlistResourceTest(BaseTest):
             headers=no_token)
         self.assertTrue(b'Authorization Required' in response.data)
 
+    #Update bucketlists tests
     def test_bucketlist_successfully_updated_message(self):
         updates = {
             "name": "the first one",
             "description": "there will be another"
         }
         response = self.client.put(
-            '/api/v1/bucketlists/{}'.format(self.example_bucketlist_one.id),
+            '/api/v1/bucketlists/{}'.format(
+                self.example_bucketlist_one.id),
             data=json.dumps(updates),
             headers=self.headers)
-        self.assertTrue(b'bucketlist updated successfully' in response.data)
+        self.assertTrue(b'bucketlist updated successfully'
+                        in response.data)
 
+    def test_message_bucketlist_id_does_not_exist(self):
+        updates = {
+            "name": "the first one",
+            "description": "there will be another"
+        }
+        response = self.client.put(
+            '/api/v1/bucketlists/{}'.format(89),
+            data=json.dumps(updates),
+            headers=self.headers)
+        self.assertTrue(b'does not exist' in response.data)
 
+    def test_update_bucketlist_request_with_empty_strings(self):
+        updates = {
+            "name": "",
+            "description": "this has no name"
+        }
+        response = self.client.put(
+            '/api/v1/bucketlists/{}'.format(
+                self.example_bucketlist_one.id),
+            data=json.dumps(updates),
+            headers=self.headers)
+        self.assertTrue(b'empty strings not allowed' in response.data)
 
-
-
-        
+    #delete bucketlist tests
