@@ -127,6 +127,31 @@ class BucketlistResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'Missing required parameter' in response.data)
 
+    def test_create_bucketlist_request_with_empty_strings(self):
+        new_bucketlist = {
+            "name": "",
+            "description": "this has no name"
+        }
+        response = self.client.post(
+            '/api/v1/bucketlists',
+            data=json.dumps(new_bucketlist),
+            headers=self.headers)
+        self.assertTrue(b'empty strings not allowed' in response.data)
+
+    def test_cant_create_bucketlist_without_authentication(self):
+        new_bucketlist = {
+            "name": "Not allowed",
+            "description": "I have not been authenticated!"
+        }
+        no_token = self.headers
+        no_token['Authorization'] = ""
+        response = self.client.post(
+            '/api/v1/bucketlists',
+            data=json.dumps(new_bucketlist),
+            headers=no_token)
+        self.assertTrue(b'Authorization Required' in response.data)
+
+
 
 
         
