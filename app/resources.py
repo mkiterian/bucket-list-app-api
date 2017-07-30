@@ -38,7 +38,7 @@ class UserResource(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('username', type=str,
                             required=True, location='json')
-        parser.add_argument('email', type=str, required=True, 
+        parser.add_argument('email', type=str, required=True,
                             location='json')
         parser.add_argument('password', type=str,
                             required=True, location='json')
@@ -56,7 +56,7 @@ class UserResource(Resource):
                     db.session.commit()
                     return {'message': 'user successfully registered!'}
                 else:
-                    return {'message': 'Make password should match '\
+                    return {'message': 'Make password should match '
                                        'confirm password'}
             else:
                 return {'message': 'email is required'}
@@ -64,4 +64,89 @@ class UserResource(Resource):
             return {'message': 'username is required'}
 
 
+class BucketlistResource(Resource):
+    '''
+    Defines handlers for get, post and put bucketlist requests
+    '''
+    @jwt_required()
+    def get(self, id=None):
+        if id is not None:
+            bucketlist = Bucketlist.query.get(id)
+            if bucketlist is not None:
+                return {
+                    'id': bucketlist.id,
+                    'name': bucketlist.name,
+                    'description': bucketlist.description
+                }
+            else:
+                return {'message': 'requested id does not exist'}
+        else:
+            result = Bucketlist.query.all()
+
+            bucketlists = dict()
+            for bucketlist in result:
+                bucketlists[bucketlist.id] = {
+                    'name': bucketlist.name,
+                    'description': bucketlist.description
+                }
+            return bucketlists
+
+    @jwt_required()
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('name',
+                            type=str, required=True, location='json')
+        parser.add_argument('description', type=str,
+                            required=True, location='json')
+
+        args = parser.parse_args(strict=True)
+        if len(args['name'].strip()) == 0 or len(
+                args['description'].strip()) == 0:
+            return {'message': 'empty strings not allowed'}
+        else:
+            new_bucketlist = Bucketlist(
+                args['name'], args['description'],
+                current_identity['user_id'])
+            db.session.add(new_bucketlist)
+            db.session.commit()
+            return {'message': 'bucketlist created successfully'}
+
+    @jwt_required()
+    def put(self, id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('name',
+                            type=str, required=True, location='json')
+        parser.add_argument('description', type=str,
+                            required=True, location='json')
+
+        args = parser.parse_args(strict=True)
+
+        bucketlist = Bucketlist.query.filter_by(id=id).first()
+        if bucketlist is not None:
+            if len(args['name'].strip()) == 0 or len(
+                    args['description'].strip()) == 0:
+                return {'message': 'empty strings not allowed'}
+            else:
+                bucketlist.name = args['name']
+                bucketlist.description = args['description']
+
+                db.session.merge(bucketlist)
+                db.session.commit()
+                return {'message': 'bucketlist updated successfully'}
+        else:
+            return {'message': 'does not exist'}
+
+    @jwt_required()
+    def delete(self, id):
+        bucketlist = Bucketlist.query.get(id)
+        if bucketlist is not None:
+            db.session.delete(bucketlist)
+            db.session.commit()
+            return {'message': 'bucketlist deleted successfully'}
+        else:
+            return {'message': 'cannot delete non-existent bucketlist'}
+
+
 api.add_resource(UserResource, '/auth/register')
+api.add_resource(BucketlistResource,
+                 '/bucketlists/<int:id>', '/bucketlists')

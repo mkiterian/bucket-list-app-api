@@ -4,38 +4,18 @@ import json
 from passlib.hash import bcrypt
 
 from app import app, db
-from app.models import User, Bucketlist, Item
+from app.models import User
+from base_testcase import BaseTest
 
 
-class UserTest(unittest.TestCase):
+class UserResourceTest(BaseTest):
     def setUp(self):
-        app.config['SECRET_KEY'] = '8h87yhggfd45dfds22as'
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['DEBUG'] = True
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://'\
-            'localhost/db_for_api_tests'
-        self.client = app.test_client()
-        db.drop_all()
-        db.create_all()
-
-        self.headers = {"Content-Type": "application/json"}
-        self.temp_user = {
-            "username": "Sansa",
-            "email": "sansa@gmail.com",
-            "password": "wicked",
-            "confirm_password": "wicked"
-        }
-
-        self.saved_user = User("tyrion", "tyrion@gmail.com",
-                               bcrypt.hash("lion", rounds=12))
-        db.session.add(self.saved_user)
-        db.session.commit()
+        super(UserResourceTest, self).setUp()
 
     def tearDown(self):
-        db.session.remove
-        db.drop_all()
+        super(UserResourceTest, self).tearDown()
 
+    #user login tests
     def test_login_returns_ok_status_code(self):
         user = {
             "username": self.saved_user.username,
@@ -66,7 +46,7 @@ class UserTest(unittest.TestCase):
             headers=self.headers)
         self.assertTrue(b'Invalid credentials' in response.data)
 
-    def test_empty_submit_returns_correct_message(self):
+    def test_login_with_empty_submit_returns_correct_message(self):
         user = {
             "username": "",
             "password": ""
@@ -76,6 +56,7 @@ class UserTest(unittest.TestCase):
             headers=self.headers)
         self.assertTrue(b'Invalid credentials' in response.data)
 
+    #user register tests
     def test_register_returns_ok_status_code(self):
         user = self.temp_user
         response = self.client.post(
