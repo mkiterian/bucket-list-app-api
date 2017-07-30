@@ -89,6 +89,21 @@ class BucketlistResource(Resource):
                     'name': bucketlist.name, 'description': bucketlist.description}
             return bucketlists
 
+    @jwt_required()
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('name', type=str, required=True, location='json')
+        parser.add_argument('description', type=str, required=True, location='json')
+
+        args = parser.parse_args(strict=True)
+        if len(args['name'].strip()) == 0 or len(args['description'].strip()) == 0:
+            return {'message': 'empty strings not allowed'}
+        else:
+            new_bucketlist = Bucketlist(args['name'], args['description'], current_identity['user_id'])
+            db.session.add(new_bucketlist)
+            db.session.commit()
+            return {'message': 'bucketlist created successfully'}
+
 
 api.add_resource(UserResource, '/auth/register')
 api.add_resource(BucketlistResource, '/bucketlists/<int:id>', '/bucketlists')
