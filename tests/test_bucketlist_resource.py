@@ -37,40 +37,31 @@ class BucketlistResourceTest(BaseTest):
         self.bucketlist_one_id = Bucketlist.query.filter_by(
             name="bucketlist_one").first().id
 
+        self.response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(self.user),
+            headers=self.headers)
+        self.response_content = json.loads(self.response.data)
+        self.headers['Authorization'] = 'JWT {}'.format(
+            self.response_content['access_token'])
+
     def tearDown(self):
         super(BucketlistResourceTest, self).tearDown()
 
     def test_view_bucketlists_status_code_is_ok(self):
-        response = self.client.post(
-            '/api/v1/auth/login', data=json.dumps(self.user),
-            headers=self.headers)
-        response_content = json.loads(response.data)
-        self.headers['Authorization'] = 'JWT {}'.format(
-            response_content['access_token'])
+        
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
             headers=self.headers)
         self.assertEqual(response.status_code, 200)
-
+    
+    
     def test_if_bucketlist_name_is_returned(self):
-        response = self.client.post(
-            '/api/v1/auth/login', data=json.dumps(self.user),
-            headers=self.headers)
-        response_content = json.loads(response.data)
-        self.headers['Authorization'] = 'JWT {}'.format(
-            response_content['access_token'])
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
             headers=self.headers)
         self.assertTrue(b'bucketlist_one' in response.data)
 
     def test_all_bucketlists_are_returned(self):
-        response = self.client.post(
-            '/api/v1/auth/login', data=json.dumps(self.user),
-            headers=self.headers)
-        response_content = json.loads(response.data)
-        self.headers['Authorization'] = 'JWT {}'.format(
-            response_content['access_token'])
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
             headers=self.headers)
@@ -78,18 +69,14 @@ class BucketlistResourceTest(BaseTest):
                         and b'bucketlist_two' in response.data)
 
     def test_cant_view_bucketlists_without_token(self):
+        no_token = self.headers
+        no_token['Authorization'] = ""
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
-            headers=self.headers)
+            headers=no_token)
         self.assertTrue(b'Authorization Required' in response.data)
 
     def test_successful_status_code_when_bucket_id_is_specified(self):
-        response = self.client.post(
-            '/api/v1/auth/login', data=json.dumps(self.user),
-            headers=self.headers)
-        response_content = json.loads(response.data)
-        self.headers['Authorization'] = 'JWT {}'.format(
-            response_content['access_token'])
         response = self.client.get(
             '/api/v1/bucketlists/{}'.format(self.bucketlist_one_id),
             data=json.dumps(self.user),
@@ -97,12 +84,6 @@ class BucketlistResourceTest(BaseTest):
         self.assertEqual(response.status_code, 200)
 
     def test_bucketlist_name_is_returned_given_id(self):
-        response = self.client.post(
-            '/api/v1/auth/login', data=json.dumps(self.user),
-            headers=self.headers)
-        response_content = json.loads(response.data)
-        self.headers['Authorization'] = 'JWT {}'.format(
-            response_content['access_token'])
         response = self.client.get(
             '/api/v1/bucketlists/{}'.format(self.bucketlist_one_id),
             data=json.dumps(self.user),
@@ -111,12 +92,6 @@ class BucketlistResourceTest(BaseTest):
         self.assertTrue(b'bucketlist_one' in response.data)
 
     def test_only_one_bucketlist_is_returned_given_id(self):
-        response = self.client.post(
-            '/api/v1/auth/login', data=json.dumps(self.user),
-            headers=self.headers)
-        response_content = json.loads(response.data)
-        self.headers['Authorization'] = 'JWT {}'.format(
-            response_content['access_token'])
         response = self.client.get(
             '/api/v1/bucketlists/{}'.format(self.bucketlist_one_id),
             data=json.dumps(self.user),
@@ -125,16 +100,33 @@ class BucketlistResourceTest(BaseTest):
         self.assertEqual(response.data.count(b'id'), 1)
 
     def test_response_message_for_non_existent_id(self):
-        response = self.client.post(
-            '/api/v1/auth/login', data=json.dumps(self.user),
-            headers=self.headers)
-        response_content = json.loads(response.data)
-        self.headers['Authorization'] = 'JWT {}'.format(
-            response_content['access_token'])
         response = self.client.get(
             '/api/v1/bucketlists/2000',
             data=json.dumps(self.user),
             headers=self.headers)
         self.assertTrue(b'requested id does not exist' in response.data)
+
+    def test_bucketlist_created_successfully_message(self):
+        new_bucketlist = {
+            "name": "new bucketlist",
+            "description": "this is a test bucketlist"
+        }
+        response = self.client.post(
+            '/api/v1/bucketlists',
+            data=json.dumps(new_bucketlist),
+            headers=self.headers)
+        self.assertTrue(b'bucketlist created successfully' in response.data)
+
+    def test_create_bucketlist_request_missing_field_message(self):
+        new_bucketlist = {
+            "name": "new bucketlist"
+        }
+        response = self.client.post(
+            '/api/v1/bucketlists',
+            data=json.dumps(new_bucketlist),
+            headers=self.headers)
+        self.assertTrue(b'Missing required parameter' in response.data)
+
+
 
         
