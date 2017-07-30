@@ -38,7 +38,7 @@ class UserResource(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('username', type=str,
                             required=True, location='json')
-        parser.add_argument('email', type=str, required=True, 
+        parser.add_argument('email', type=str, required=True,
                             location='json')
         parser.add_argument('password', type=str,
                             required=True, location='json')
@@ -56,7 +56,7 @@ class UserResource(Resource):
                     db.session.commit()
                     return {'message': 'user successfully registered!'}
                 else:
-                    return {'message': 'Make password should match '\
+                    return {'message': 'Make password should match '
                                        'confirm password'}
             else:
                 return {'message': 'email is required'}
@@ -64,4 +64,28 @@ class UserResource(Resource):
             return {'message': 'username is required'}
 
 
+class BucketlistResource(Resource):
+    '''
+    Defines handlers for get, post and put bucketlist requests
+    '''
+    @jwt_required()
+    def get(self, id=None):
+        if id is not None:
+            bucketlist = Bucketlist.query.get(id)
+            return {
+                'id': bucketlist.id,
+                'name': bucketlist.name,
+                'description': bucketlist.description
+            }
+        else:
+            result = Bucketlist.query.all()
+
+            bucketlists = dict()
+            for bucketlist in result:
+                bucketlists[bucketlist.id] = {
+                    'name': bucketlist.name, 'description': bucketlist.description}
+            return bucketlists
+
+
 api.add_resource(UserResource, '/auth/register')
+api.add_resource(BucketlistResource, '/bucketlists/<int:id>', '/bucketlists')
