@@ -47,7 +47,7 @@ class BucketlistResourceTest(BaseTest):
     def tearDown(self):
         super(BucketlistResourceTest, self).tearDown()
 
-    #view bucketlists tests
+    # view bucketlists tests
     def test_view_bucketlists_status_code_is_ok(self):
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
@@ -105,7 +105,7 @@ class BucketlistResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'requested id does not exist' in response.data)
 
-    #create bucketlist tests
+    # create bucketlist tests
     def test_bucketlist_created_successfully_message(self):
         new_bucketlist = {
             "name": "new bucketlist",
@@ -151,7 +151,7 @@ class BucketlistResourceTest(BaseTest):
             headers=no_token)
         self.assertTrue(b'Authorization Required' in response.data)
 
-    #Update bucketlists tests
+    # Update bucketlists tests
     def test_bucketlist_successfully_updated_message(self):
         updates = {
             "name": "the first one",
@@ -188,4 +188,19 @@ class BucketlistResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'empty strings not allowed' in response.data)
 
-    #delete bucketlist tests
+    # delete bucketlist tests
+    def test_bucketlist_deleted_successfully_message(self):
+        response = self.client.delete(
+            '/api/v1/bucketlists/{}'.format(
+                self.example_bucketlist_one.id),
+            data={},
+            headers=self.headers)
+        self.assertTrue(b'bucketlist deleted successfully'
+                        in response.data)
+
+    def test_message_for_invalid_bucketlist_id(self):
+        response = self.client.delete(
+            '/api/v1/bucketlists/{}'.format(21), data={},
+            headers=self.headers)
+        self.assertTrue(
+            b'cannot delete non-existent bucketlist' in response.data)

@@ -15,6 +15,7 @@ class UserResourceTest(BaseTest):
     def tearDown(self):
         super(UserResourceTest, self).tearDown()
 
+    #user login tests
     def test_login_returns_ok_status_code(self):
         user = {
             "username": self.saved_user.username,
@@ -45,7 +46,7 @@ class UserResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'Invalid credentials' in response.data)
 
-    def test_empty_submit_returns_correct_message(self):
+    def test_login_with_empty_submit_returns_correct_message(self):
         user = {
             "username": "",
             "password": ""
@@ -55,6 +56,7 @@ class UserResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'Invalid credentials' in response.data)
 
+    #user register tests
     def test_register_returns_ok_status_code(self):
         user = self.temp_user
         response = self.client.post(
