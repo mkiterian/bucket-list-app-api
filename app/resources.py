@@ -72,11 +72,14 @@ class BucketlistResource(Resource):
     def get(self, id=None):
         if id is not None:
             bucketlist = Bucketlist.query.get(id)
-            return {
-                'id': bucketlist.id,
-                'name': bucketlist.name,
-                'description': bucketlist.description
-            }
+            if bucketlist is not None:
+                return {
+                    'id': bucketlist.id,
+                    'name': bucketlist.name,
+                    'description': bucketlist.description
+                }
+            else:
+                return {'message': 'requested id does not exist'}
         else:
             result = Bucketlist.query.all()
 
