@@ -136,6 +136,16 @@ class BucketlistResource(Resource):
         else:
             return {'message': 'does not exist'}
 
+    @jwt_required()
+    def delete(self, id):
+        bucketlist = Bucketlist.query.get(id)
+        if bucketlist is not None:
+            db.session.delete(bucketlist)
+            db.session.commit()
+            return {'message': 'bucketlist deleted successfully'}
+        else:
+            return {'message': 'cannot delete non-existent bucketlist'}
+
 
 api.add_resource(UserResource, '/auth/register')
 api.add_resource(BucketlistResource,
