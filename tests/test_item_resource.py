@@ -52,7 +52,6 @@ class ItemResourceTest(BaseTest):
             '/api/v1/bucketlists/{}/items'.format(
                 self.bucketlist_with_items_id),
             headers=self.headers)
-        print(response.data)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(b'Item one' in response.data)
         self.assertTrue(b'Item two' in response.data)
@@ -63,6 +62,12 @@ class ItemResourceTest(BaseTest):
         response = self.client.get(
             '/api/v1/bucketlists/{}/items'.format(
                 self.bucketlist_with_items_id),
-            data=json.dumps(self.user),
             headers=no_token)
         self.assertTrue(b'Authorization Required' in response.data)
+
+    def test_response_message_for_non_existent_id(self):
+        response = self.client.get(
+            '/api/v1/bucketlists/2000/items', data={},
+            headers=self.headers)
+        print(response.data)
+        self.assertTrue(b'bucketlist does not exist' in response.data)
