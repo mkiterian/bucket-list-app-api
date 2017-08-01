@@ -29,6 +29,8 @@ class ItemResourceTest(BaseTest):
         self.bucketlist_with_items_id = Bucketlist.query.filter_by(
             name="bucketlist with items").first().id
 
+        
+
         self.item_1 = Item('Item one', 'this is item one',
                            self.bucketlist_with_items_id)
         self.item_2 = Item('Item two', 'this is item two',
@@ -36,6 +38,8 @@ class ItemResourceTest(BaseTest):
         db.session.add(self.item_1)
         db.session.add(self.item_2)
         db.session.commit()
+
+        self.item_one_id = Item.query.filter_by(title='Item one').first().id
 
         self.response = self.client.post(
             '/api/v1/auth/login', data=json.dumps(self.user),
@@ -71,3 +75,43 @@ class ItemResourceTest(BaseTest):
             headers=self.headers)
         print(response.data)
         self.assertTrue(b'bucketlist does not exist' in response.data)
+
+    def test_item_name_returned_when_item_id_is_specified(self):
+        response = self.client.get(
+            '/api/v1/bucketlists/{}/items/{}'.format(
+                self.bucketlist_with_items_id, self.item_one_id),
+            headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b'Item one' in response.data)
+
+    def test_message_if_item_id_does_not_exist(self):
+        response = self.client.get(
+            '/api/v1/bucketlists/{}/items/{}'.format(
+                self.bucketlist_with_items_id, 555),
+            headers=self.headers)
+        self.assertTrue(b'item does not exist' in response.data)
+
+    #test create item
+    def test_item_created_successfully_message(self):
+        new_item = {
+            "title": "title one",
+            "description": "this is my first title"
+        }
+        response = self.client.post(
+            '/api/v1/bucketlists/{}/items'.format(self.item_one_id),
+            data=json.dumps(new_item),
+            headers=self.headers)
+        print(response.data)
+        self.assertTrue(b'item created successfully' in response.data)
+
+    def test_create_item_request_missing_field_message(self):
+        new_item = {
+            "description": "this is my first title"
+        }
+        response = self.client.post(
+            '/api/v1/bucketlists/{}/items'.format(self.item_one_id),
+            data=json.dumps(new_item),
+            headers=self.headers)
+        print(response.data)
+        self.assertTrue(b'Missing required parameter' in response.data)
+        
