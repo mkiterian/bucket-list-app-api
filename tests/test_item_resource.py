@@ -114,4 +114,16 @@ class ItemResourceTest(BaseTest):
             headers=self.headers)
         print(response.data)
         self.assertTrue(b'Missing required parameter' in response.data)
+
+    def test_create_item_with_empty_strings(self):
+        new_item = {
+            "title": "",
+            "description": "this is my first title"
+        }
+        response = self.client.post(
+            '/api/v1/bucketlists/{}/items'.format(self.item_one_id),
+            data=json.dumps(new_item),
+            headers=self.headers)
+        print(response.data)
+        self.assertTrue(b'empty strings not allowed' in response.data)
         
