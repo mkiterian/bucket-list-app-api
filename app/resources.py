@@ -122,7 +122,7 @@ class BucketlistResource(Resource):
         args = parser.parse_args(strict=True)
 
         bucketlist = Bucketlist.query.filter_by(id=id).first()
-        if bucketlist is not None:
+        if bucketlist:
             if len(args['name'].strip()) == 0 or len(
                     args['description'].strip()) == 0:
                 return {'message': 'empty strings not allowed'}
@@ -159,9 +159,12 @@ class ItemResource(Resource):
             if item_id is not None:
                 item = Item.query.filter_by(bucket_id=id,
                                             id=item_id).first()
-                return {'id': item.id,
-                        'title': item.title,
-                        'description': item.description}
+                if item:
+                    return {'id': item.id,
+                            'title': item.title,
+                            'description': item.description}
+                else:
+                    return {'message': 'item does not exist'}
             else:
                 result = Item.query.filter_by(bucket_id=id).all()
 
@@ -172,6 +175,18 @@ class ItemResource(Resource):
                 return items
         else:
             return {'message': 'bucketlist does not exist'}
+
+    @jwt_required()
+    def post(self, id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('title', type=str, required=True, location='json')
+        parser.add_argument('description', type=str, required=True, location='json')
+
+        args = parser.parse_args(strict=True)
+        new_item = Item(args['title'], args['description'], id)
+        db.session.add(new_item)
+        db.session.commit()
+        return {'message': 'item created successfully'}
         
 
 
