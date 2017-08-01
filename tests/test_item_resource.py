@@ -151,4 +151,16 @@ class ItemResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'item updated successfully' in response.data)
 
+    def test_message_on_update_with_missing_parameter(self):
+        updates = {
+            "description": "descriptive"
+        }
+        response = self.client.put(
+            '/api/v1/bucketlists/{}/items/{}'.format(self.bucketlist_with_items_id, self.item_one_id),
+            data=json.dumps(updates),
+            headers=self.headers)
+        self.assertTrue(b'Missing required parameter' in response.data)
+
+    
+
         
