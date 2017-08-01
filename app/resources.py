@@ -183,10 +183,14 @@ class ItemResource(Resource):
         parser.add_argument('description', type=str, required=True, location='json')
 
         args = parser.parse_args(strict=True)
-        new_item = Item(args['title'], args['description'], id)
-        db.session.add(new_item)
-        db.session.commit()
-        return {'message': 'item created successfully'}
+        if len(args['title'].strip()) == 0 or len(
+                    args['description'].strip()) == 0:
+                return {'message': 'empty strings not allowed'}
+        else:
+            new_item = Item(args['title'], args['description'], id)
+            db.session.add(new_item)
+            db.session.commit()
+            return {'message': 'item created successfully'}
         
 
 
