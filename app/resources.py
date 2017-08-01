@@ -153,20 +153,26 @@ class ItemResource(Resource):
     '''
     @jwt_required()
     def get(self, id, item_id=None):
-        if item_id is not None:
-            item = Item.query.filter_by(bucket_id=id,
-                                        id=item_id).first()
-            return {'id': item.id,
-                    'title': item.title,
-                    'description': item.description}
-        else:
-            result = Item.query.filter_by(bucket_id=id).all()
+        bucketlist = Bucketlist.query.get(id)
+        print(bucketlist)
+        if bucketlist is not None:
+            if item_id is not None:
+                item = Item.query.filter_by(bucket_id=id,
+                                            id=item_id).first()
+                return {'id': item.id,
+                        'title': item.title,
+                        'description': item.description}
+            else:
+                result = Item.query.filter_by(bucket_id=id).all()
 
-            items = dict()
-            for item in result:
-                items[item.id] = {'title': item.title,
-                                  'description': item.description}
-            return items
+                items = dict()
+                for item in result:
+                    items[item.id] = {'title': item.title,
+                                    'description': item.description}
+                return items
+        else:
+            return {'message': 'bucketlist does not exist'}
+        
 
 
 api.add_resource(UserResource, '/auth/register')
