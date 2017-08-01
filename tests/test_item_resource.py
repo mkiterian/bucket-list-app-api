@@ -139,4 +139,16 @@ class ItemResourceTest(BaseTest):
             data=json.dumps(new_item),
             headers=no_token)
         self.assertTrue(b'Authorization Required' in response.data)
+
+    def test_item_updated_successfully_message(self):
+        updates = {
+            "title": "not item one anymore",
+            "description": "this was changed"
+        }
+        response = self.client.put(
+            '/api/v1/bucketlists/{}/items/{}'.format(self.bucketlist_with_items_id, self.item_one_id),
+            data=json.dumps(updates),
+            headers=self.headers)
+        self.assertTrue(b'item updated successfully' in response.data)
+
         
