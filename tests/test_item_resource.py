@@ -184,6 +184,13 @@ class ItemResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'item deleted successfully' in response.data)
 
+    def test_message_for_delete_non_existing_id(self):
+        response = self.client.delete(
+            '/api/v1/bucketlists/{}/items/{}'.format(
+                self.bucketlist_with_items_id, 40000),
+            headers=self.headers)
+        self.assertTrue(b'item does not exist' in response.data)
+
     
 
         
