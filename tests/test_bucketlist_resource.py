@@ -15,7 +15,7 @@ class BucketlistResourceTest(BaseTest):
             "username": self.saved_user.username,
             "password": "lion"
         }
-
+        
         # create a bucketlist for tyrion
         current_user = User.query.filter_by(
             username=self.saved_user.username).first()
@@ -75,6 +75,7 @@ class BucketlistResourceTest(BaseTest):
             headers=no_token)
         self.assertTrue(b'Authorization Required' in response.data)
 
+    #view specific bucketlist
     def test_successful_status_code_when_bucket_id_is_specified(self):
         response = self.client.get(
             '/api/v1/bucketlists/{}'.format(self.bucketlist_one_id),
