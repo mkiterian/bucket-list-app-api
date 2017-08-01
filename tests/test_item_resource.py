@@ -109,7 +109,7 @@ class ItemResourceTest(BaseTest):
             "description": "this is my first title"
         }
         response = self.client.post(
-            '/api/v1/bucketlists/{}/items'.format(self.item_one_id),
+            '/api/v1/bucketlists/{}/items'.format(self.bucketlist_with_items_id),
             data=json.dumps(new_item),
             headers=self.headers)
         print(response.data)
@@ -121,9 +121,22 @@ class ItemResourceTest(BaseTest):
             "description": "this is my first title"
         }
         response = self.client.post(
-            '/api/v1/bucketlists/{}/items'.format(self.item_one_id),
+            '/api/v1/bucketlists/{}/items'.format(self.bucketlist_with_items_id),
             data=json.dumps(new_item),
             headers=self.headers)
         print(response.data)
         self.assertTrue(b'empty strings not allowed' in response.data)
+
+    def test_cant_create_item_without_authentication(self):
+        new_item = {
+            "title": "new item title",
+            "description": "this is my first title"
+        }
+        no_token = self.headers
+        no_token['Authorization'] = ""
+        response = self.client.post(
+            '/api/v1/bucketlists/{}/items'.format(self.bucketlist_with_items_id),
+            data=json.dumps(new_item),
+            headers=no_token)
+        self.assertTrue(b'Authorization Required' in response.data)
         
