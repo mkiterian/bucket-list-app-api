@@ -191,6 +191,39 @@ class ItemResource(Resource):
             db.session.add(new_item)
             db.session.commit()
             return {'message': 'item created successfully'}
+
+    @jwt_required()
+    def put(self, id, item_id):        
+        parser = reqparse.RequestParser()
+        parser.add_argument('title', type=str, required=True, location='json')
+        parser.add_argument('description', type=str, required=True, location='json')
+
+        args = parser.parse_args(strict=True)
+
+        item = Item.query.filter_by(id=item_id, bucket_id=id).first()
+        if item:
+            if len(args['title'].strip()) == 0 or len(
+                    args['description'].strip()) == 0:
+                return {'message': 'empty strings not allowed'}
+            else:
+                item.title = args['title']
+                item.description = args['description']
+        else:
+            return {'message': 'item does not exist'}
+
+        db.session.merge(item)
+        db.session.commit()
+        return {'message': 'item updated successfully'}
+
+    @jwt_required()
+    def delete(self, id, item_id):
+        item = Item.query.filter_by(id=item_id, bucket_id=id).first()
+        if item:
+            db.session.delete(item)
+            db.session.commit()
+            return {'message': 'item deleted successfully'}
+        else: 
+            return {'message': 'cannot delete, item does not exist'}
         
 
 
