@@ -8,12 +8,7 @@ from app.models import User, Bucketlist
 class BaseTest(unittest.TestCase):
     def setUp(self):
         #setup test environment configuration
-        app.config['SECRET_KEY'] = '8h87yhggfd45dfds22as'
-        app.config['TESTING'] = True
-        app.config['WTF_CSRF_ENABLED'] = False
-        app.config['DEBUG'] = True
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://'\
-            'localhost/db_for_api_tests'
+        app.config.from_object('config.TestingConfig')
         self.client = app.test_client()
         db.drop_all()
         db.create_all()
