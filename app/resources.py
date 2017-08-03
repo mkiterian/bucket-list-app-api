@@ -1,7 +1,7 @@
 from passlib.hash import bcrypt
 
 from flask_jwt import JWT, jwt_required, current_identity
-from flask_restful import Api, Resource, abort, reqparse
+from flask_restful import Api, Resource, abort, fields, marshal, reqparse
 
 from app import app, db
 from .models import Bucketlist, Item, User
@@ -70,26 +70,21 @@ class BucketlistResource(Resource):
     '''
     @jwt_required()
     def get(self, id=None):
+        bucketlist_fields = {
+                    'id': fields.Integer,
+                    'name': fields.String,
+                    'description': fields.String
+                }
+
         if id is not None:
             bucketlist = Bucketlist.query.get(id)
             if bucketlist is not None:
-                return {
-                    'id': bucketlist.id,
-                    'name': bucketlist.name,
-                    'description': bucketlist.description
-                }
+                return marshal(bucketlist, bucketlist_fields)
             else:
                 return {'message': 'requested id does not exist'}, 404
         else:
-            result = Bucketlist.query.all()
-
-            bucketlists = dict()
-            for bucketlist in result:
-                bucketlists[bucketlist.id] = {
-                    'name': bucketlist.name,
-                    'description': bucketlist.description
-                }
-            return bucketlists
+            bucketlists = Bucketlist.query.all()
+            return marshal(bucketlists, bucketlist_fields)
 
     @jwt_required()
     def post(self):
@@ -154,25 +149,24 @@ class ItemResource(Resource):
     @jwt_required()
     def get(self, id, item_id=None):
         bucketlist = Bucketlist.query.get(id)
-        print(bucketlist)
+
+        item_fields = {
+                    'id': fields.Integer,
+                    'title': fields.String,
+                    'description': fields.String
+                }
+
         if bucketlist is not None:
             if item_id is not None:
                 item = Item.query.filter_by(bucket_id=id,
                                             id=item_id).first()
                 if item:
-                    return {'id': item.id,
-                            'title': item.title,
-                            'description': item.description}
+                    return marshal(item, item_fields)
                 else:
                     return {'message': 'item does not exist'}, 404
             else:
-                result = Item.query.filter_by(bucket_id=id).all()
-
-                items = dict()
-                for item in result:
-                    items[item.id] = {'title': item.title,
-                                    'description': item.description}
-                return items
+                items = Item.query.filter_by(bucket_id=id).all()
+                return marshal(items, item_fields)
         else:
             return {'message': 'bucketlist does not exist'}, 404
 
@@ -208,12 +202,11 @@ class ItemResource(Resource):
             else:
                 item.title = args['title']
                 item.description = args['description']
+                db.session.merge(item)
+                db.session.commit()
+                return {'message': 'item updated successfully'}, 200
         else:
             return {'message': 'item does not exist'}, 404
-
-        db.session.merge(item)
-        db.session.commit()
-        return {'message': 'item updated successfully'}, 200
 
     @jwt_required()
     def delete(self, id, item_id):
