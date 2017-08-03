@@ -73,6 +73,7 @@ class BucketlistResourceTest(BaseTest):
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
             headers=no_token)
+        self.assertTrue(response.status_code == 401)
         self.assertTrue(b'Authorization Required' in response.data)
 
     #view specific bucketlist
@@ -151,6 +152,7 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists',
             data=json.dumps(new_bucketlist),
             headers=no_token)
+        self.assertTrue(response.status_code==401)
         self.assertTrue(b'Authorization Required' in response.data)
 
     # Update bucketlists tests
