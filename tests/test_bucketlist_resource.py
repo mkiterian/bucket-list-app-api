@@ -15,7 +15,7 @@ class BucketlistResourceTest(BaseTest):
             "username": self.saved_user.username,
             "password": "lion"
         }
-
+        
         # create a bucketlist for tyrion
         current_user = User.query.filter_by(
             username=self.saved_user.username).first()
@@ -53,7 +53,7 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists', data=json.dumps(self.user),
             headers=self.headers)
         self.assertEqual(response.status_code, 200)
-
+    
     def test_if_bucketlist_name_is_returned(self):
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
@@ -75,6 +75,7 @@ class BucketlistResourceTest(BaseTest):
             headers=no_token)
         self.assertTrue(b'Authorization Required' in response.data)
 
+    #view specific bucketlist
     def test_successful_status_code_when_bucket_id_is_specified(self):
         response = self.client.get(
             '/api/v1/bucketlists/{}'.format(self.bucketlist_one_id),
@@ -204,3 +205,4 @@ class BucketlistResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(
             b'cannot delete non-existent bucketlist' in response.data)
+    

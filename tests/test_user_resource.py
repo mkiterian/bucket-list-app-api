@@ -55,7 +55,7 @@ class UserResourceTest(BaseTest):
             '/api/v1/auth/login', data=json.dumps(user),
             headers=self.headers)
         self.assertTrue(b'Invalid credentials' in response.data)
-
+    
     #user register tests
     def test_register_returns_ok_status_code(self):
         user = self.temp_user
@@ -97,3 +97,4 @@ class UserResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'Make password should match '
                         b'confirm password' in response.data)
+    

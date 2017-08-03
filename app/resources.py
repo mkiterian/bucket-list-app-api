@@ -122,7 +122,7 @@ class BucketlistResource(Resource):
         args = parser.parse_args(strict=True)
 
         bucketlist = Bucketlist.query.filter_by(id=id).first()
-        if bucketlist is not None:
+        if bucketlist:
             if len(args['name'].strip()) == 0 or len(
                     args['description'].strip()) == 0:
                 return {'message': 'empty strings not allowed'}
@@ -147,6 +147,89 @@ class BucketlistResource(Resource):
             return {'message': 'cannot delete non-existent bucketlist'}
 
 
+class ItemResource(Resource):
+    '''
+    handles get, post, put and delete item requests
+    '''
+    @jwt_required()
+    def get(self, id, item_id=None):
+        bucketlist = Bucketlist.query.get(id)
+        print(bucketlist)
+        if bucketlist is not None:
+            if item_id is not None:
+                item = Item.query.filter_by(bucket_id=id,
+                                            id=item_id).first()
+                if item:
+                    return {'id': item.id,
+                            'title': item.title,
+                            'description': item.description}
+                else:
+                    return {'message': 'item does not exist'}
+            else:
+                result = Item.query.filter_by(bucket_id=id).all()
+
+                items = dict()
+                for item in result:
+                    items[item.id] = {'title': item.title,
+                                    'description': item.description}
+                return items
+        else:
+            return {'message': 'bucketlist does not exist'}
+
+    @jwt_required()
+    def post(self, id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('title', type=str, required=True, location='json')
+        parser.add_argument('description', type=str, required=True, location='json')
+
+        args = parser.parse_args(strict=True)
+        if len(args['title'].strip()) == 0 or len(
+                    args['description'].strip()) == 0:
+                return {'message': 'empty strings not allowed'}
+        else:
+            new_item = Item(args['title'], args['description'], id)
+            db.session.add(new_item)
+            db.session.commit()
+            return {'message': 'item created successfully'}
+
+    @jwt_required()
+    def put(self, id, item_id):        
+        parser = reqparse.RequestParser()
+        parser.add_argument('title', type=str, required=True, location='json')
+        parser.add_argument('description', type=str, required=True, location='json')
+
+        args = parser.parse_args(strict=True)
+
+        item = Item.query.filter_by(id=item_id, bucket_id=id).first()
+        if item:
+            if len(args['title'].strip()) == 0 or len(
+                    args['description'].strip()) == 0:
+                return {'message': 'empty strings not allowed'}
+            else:
+                item.title = args['title']
+                item.description = args['description']
+        else:
+            return {'message': 'item does not exist'}
+
+        db.session.merge(item)
+        db.session.commit()
+        return {'message': 'item updated successfully'}
+
+    @jwt_required()
+    def delete(self, id, item_id):
+        item = Item.query.filter_by(id=item_id, bucket_id=id).first()
+        if item:
+            db.session.delete(item)
+            db.session.commit()
+            return {'message': 'item deleted successfully'}
+        else: 
+            return {'message': 'cannot delete, item does not exist'}
+        
+
+
 api.add_resource(UserResource, '/auth/register')
 api.add_resource(BucketlistResource,
                  '/bucketlists/<int:id>', '/bucketlists')
+api.add_resource(ItemResource,
+                 '/bucketlists/<int:id>/items/<item_id>',
+                 '/bucketlists/<int:id>/items')
