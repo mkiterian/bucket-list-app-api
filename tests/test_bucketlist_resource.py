@@ -73,6 +73,7 @@ class BucketlistResourceTest(BaseTest):
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
             headers=no_token)
+        self.assertTrue(response.status_code == 401)
         self.assertTrue(b'Authorization Required' in response.data)
 
     #view specific bucketlist
@@ -116,6 +117,7 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists',
             data=json.dumps(new_bucketlist),
             headers=self.headers)
+        self.assertTrue(response.status_code, 201)
         self.assertTrue(b'bucketlist created successfully' in response.data)
 
     def test_create_bucketlist_request_missing_field_message(self):
@@ -150,6 +152,7 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists',
             data=json.dumps(new_bucketlist),
             headers=no_token)
+        self.assertTrue(response.status_code==401)
         self.assertTrue(b'Authorization Required' in response.data)
 
     # Update bucketlists tests
@@ -203,6 +206,7 @@ class BucketlistResourceTest(BaseTest):
         response = self.client.delete(
             '/api/v1/bucketlists/{}'.format(21), data={},
             headers=self.headers)
+        self.assertTrue(response.status_code == 404)
         self.assertTrue(
             b'cannot delete non-existent bucketlist' in response.data)
     

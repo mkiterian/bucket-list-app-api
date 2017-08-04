@@ -1,7 +1,7 @@
 from passlib.hash import bcrypt
 
 from flask_jwt import JWT, jwt_required, current_identity
-from flask_restful import Api, Resource, abort, reqparse
+from flask_restful import Api, Resource, abort, fields, marshal, reqparse
 
 from app import app, db
 from .models import Bucketlist, Item, User
@@ -54,14 +54,14 @@ class UserResource(Resource):
                                 args['email'], hash)
                     db.session.add(user)
                     db.session.commit()
-                    return {'message': 'user successfully registered!'}
+                    return {'message': 'user successfully registered!'}, 201
                 else:
-                    return {'message': 'Make password should match '
-                                       'confirm password'}
+                    return {'message': 'password should match '
+                                       'confirm password'}, 400
             else:
-                return {'message': 'email is required'}
+                return {'message': 'email is required'}, 400
         else:
-            return {'message': 'username is required'}
+            return {'message': 'username is required'}, 400
 
 
 class BucketlistResource(Resource):
@@ -70,26 +70,21 @@ class BucketlistResource(Resource):
     '''
     @jwt_required()
     def get(self, id=None):
+        bucketlist_fields = {
+                    'id': fields.Integer,
+                    'name': fields.String,
+                    'description': fields.String
+                }
+
         if id is not None:
             bucketlist = Bucketlist.query.get(id)
             if bucketlist is not None:
-                return {
-                    'id': bucketlist.id,
-                    'name': bucketlist.name,
-                    'description': bucketlist.description
-                }
+                return marshal(bucketlist, bucketlist_fields)
             else:
-                return {'message': 'requested id does not exist'}
+                return {'message': 'requested id does not exist'}, 404
         else:
-            result = Bucketlist.query.all()
-
-            bucketlists = dict()
-            for bucketlist in result:
-                bucketlists[bucketlist.id] = {
-                    'name': bucketlist.name,
-                    'description': bucketlist.description
-                }
-            return bucketlists
+            bucketlists = Bucketlist.query.all()
+            return marshal(bucketlists, bucketlist_fields)
 
     @jwt_required()
     def post(self):
@@ -102,14 +97,14 @@ class BucketlistResource(Resource):
         args = parser.parse_args(strict=True)
         if len(args['name'].strip()) == 0 or len(
                 args['description'].strip()) == 0:
-            return {'message': 'empty strings not allowed'}
+            return {'message': 'empty strings not allowed'}, 400
         else:
             new_bucketlist = Bucketlist(
                 args['name'], args['description'],
                 current_identity['user_id'])
             db.session.add(new_bucketlist)
             db.session.commit()
-            return {'message': 'bucketlist created successfully'}
+            return {'message': 'bucketlist created successfully'}, 201
 
     @jwt_required()
     def put(self, id):
@@ -125,16 +120,16 @@ class BucketlistResource(Resource):
         if bucketlist:
             if len(args['name'].strip()) == 0 or len(
                     args['description'].strip()) == 0:
-                return {'message': 'empty strings not allowed'}
+                return {'message': 'empty strings not allowed'}, 400
             else:
                 bucketlist.name = args['name']
                 bucketlist.description = args['description']
 
                 db.session.merge(bucketlist)
                 db.session.commit()
-                return {'message': 'bucketlist updated successfully'}
+                return {'message': 'bucketlist updated successfully'}, 200
         else:
-            return {'message': 'does not exist'}
+            return {'message': 'does not exist'}, 404
 
     @jwt_required()
     def delete(self, id):
@@ -142,9 +137,9 @@ class BucketlistResource(Resource):
         if bucketlist is not None:
             db.session.delete(bucketlist)
             db.session.commit()
-            return {'message': 'bucketlist deleted successfully'}
+            return {'message': 'bucketlist deleted successfully'}, 200
         else:
-            return {'message': 'cannot delete non-existent bucketlist'}
+            return {'message': 'cannot delete non-existent bucketlist'}, 404
 
 
 class ItemResource(Resource):
@@ -154,27 +149,26 @@ class ItemResource(Resource):
     @jwt_required()
     def get(self, id, item_id=None):
         bucketlist = Bucketlist.query.get(id)
-        print(bucketlist)
+
+        item_fields = {
+                    'id': fields.Integer,
+                    'title': fields.String,
+                    'description': fields.String
+                }
+
         if bucketlist is not None:
             if item_id is not None:
                 item = Item.query.filter_by(bucket_id=id,
                                             id=item_id).first()
                 if item:
-                    return {'id': item.id,
-                            'title': item.title,
-                            'description': item.description}
+                    return marshal(item, item_fields)
                 else:
-                    return {'message': 'item does not exist'}
+                    return {'message': 'item does not exist'}, 404
             else:
-                result = Item.query.filter_by(bucket_id=id).all()
-
-                items = dict()
-                for item in result:
-                    items[item.id] = {'title': item.title,
-                                    'description': item.description}
-                return items
+                items = Item.query.filter_by(bucket_id=id).all()
+                return marshal(items, item_fields)
         else:
-            return {'message': 'bucketlist does not exist'}
+            return {'message': 'bucketlist does not exist'}, 404
 
     @jwt_required()
     def post(self, id):
@@ -185,12 +179,12 @@ class ItemResource(Resource):
         args = parser.parse_args(strict=True)
         if len(args['title'].strip()) == 0 or len(
                     args['description'].strip()) == 0:
-                return {'message': 'empty strings not allowed'}
+                return {'message': 'empty strings not allowed'}, 400
         else:
             new_item = Item(args['title'], args['description'], id)
             db.session.add(new_item)
             db.session.commit()
-            return {'message': 'item created successfully'}
+            return {'message': 'item created successfully'}, 201
 
     @jwt_required()
     def put(self, id, item_id):        
@@ -204,16 +198,15 @@ class ItemResource(Resource):
         if item:
             if len(args['title'].strip()) == 0 or len(
                     args['description'].strip()) == 0:
-                return {'message': 'empty strings not allowed'}
+                return {'message': 'empty strings not allowed'}, 400
             else:
                 item.title = args['title']
                 item.description = args['description']
+                db.session.merge(item)
+                db.session.commit()
+                return {'message': 'item updated successfully'}, 200
         else:
-            return {'message': 'item does not exist'}
-
-        db.session.merge(item)
-        db.session.commit()
-        return {'message': 'item updated successfully'}
+            return {'message': 'item does not exist'}, 404
 
     @jwt_required()
     def delete(self, id, item_id):
@@ -221,9 +214,9 @@ class ItemResource(Resource):
         if item:
             db.session.delete(item)
             db.session.commit()
-            return {'message': 'item deleted successfully'}
+            return {'message': 'item deleted successfully'}, 200
         else: 
-            return {'message': 'cannot delete, item does not exist'}
+            return {'message': 'cannot delete, item does not exist'}, 404
         
 
 

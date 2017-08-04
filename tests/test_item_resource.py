@@ -29,8 +29,6 @@ class ItemResourceTest(BaseTest):
         self.bucketlist_with_items_id = Bucketlist.query.filter_by(
             name="bucketlist with items").first().id
 
-        
-
         self.item_1 = Item('Item one', 'this is item one',
                            self.bucketlist_with_items_id)
         self.item_2 = Item('Item two', 'this is item two',
@@ -51,7 +49,7 @@ class ItemResourceTest(BaseTest):
     def tearDown(self):
         super(ItemResourceTest, self).tearDown()
 
-    #view items
+    # view items
     def test_item_names_returned_by_view_bucketlists(self):
         response = self.client.get(
             '/api/v1/bucketlists/{}/items'.format(
@@ -68,6 +66,7 @@ class ItemResourceTest(BaseTest):
             '/api/v1/bucketlists/{}/items'.format(
                 self.bucketlist_with_items_id),
             headers=no_token)
+        self.assertTrue(response.status_code==401)
         self.assertTrue(b'Authorization Required' in response.data)
 
     def test_response_message_for_non_existent_id(self):
@@ -77,7 +76,7 @@ class ItemResourceTest(BaseTest):
         print(response.data)
         self.assertTrue(b'bucketlist does not exist' in response.data)
 
-    #view item
+    # view item
     def test_item_name_returned_when_item_id_is_specified(self):
         response = self.client.get(
             '/api/v1/bucketlists/{}/items/{}'.format(
@@ -93,7 +92,7 @@ class ItemResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'item does not exist' in response.data)
 
-    #test create item
+    # test create item
     def test_item_created_successfully_message(self):
         new_item = {
             "title": "title one",
@@ -111,7 +110,8 @@ class ItemResourceTest(BaseTest):
             "description": "this is my first title"
         }
         response = self.client.post(
-            '/api/v1/bucketlists/{}/items'.format(self.bucketlist_with_items_id),
+            '/api/v1/bucketlists/{}/items'.format(
+                self.bucketlist_with_items_id),
             data=json.dumps(new_item),
             headers=self.headers)
         print(response.data)
@@ -123,7 +123,8 @@ class ItemResourceTest(BaseTest):
             "description": "this is my first title"
         }
         response = self.client.post(
-            '/api/v1/bucketlists/{}/items'.format(self.bucketlist_with_items_id),
+            '/api/v1/bucketlists/{}/items'.format(
+                self.bucketlist_with_items_id),
             data=json.dumps(new_item),
             headers=self.headers)
         print(response.data)
@@ -137,20 +138,22 @@ class ItemResourceTest(BaseTest):
         no_token = self.headers
         no_token['Authorization'] = ""
         response = self.client.post(
-            '/api/v1/bucketlists/{}/items'.format(self.bucketlist_with_items_id),
+            '/api/v1/bucketlists/{}/items'.format(
+                self.bucketlist_with_items_id),
             data=json.dumps(new_item),
             headers=no_token)
+        self.assertTrue(response.status_code==401)
         self.assertTrue(b'Authorization Required' in response.data)
 
-
-    #update item
+    # update item
     def test_item_updated_successfully_message(self):
         updates = {
             "title": "not item one anymore",
             "description": "this was changed"
         }
         response = self.client.put(
-            '/api/v1/bucketlists/{}/items/{}'.format(self.bucketlist_with_items_id, self.item_one_id),
+            '/api/v1/bucketlists/{}/items/{}'.format(
+                self.bucketlist_with_items_id, self.item_one_id),
             data=json.dumps(updates),
             headers=self.headers)
         self.assertTrue(b'item updated successfully' in response.data)
@@ -160,7 +163,8 @@ class ItemResourceTest(BaseTest):
             "description": "descriptive"
         }
         response = self.client.put(
-            '/api/v1/bucketlists/{}/items/{}'.format(self.bucketlist_with_items_id, self.item_one_id),
+            '/api/v1/bucketlists/{}/items/{}'.format(
+                self.bucketlist_with_items_id, self.item_one_id),
             data=json.dumps(updates),
             headers=self.headers)
         self.assertTrue(b'Missing required parameter' in response.data)
@@ -171,12 +175,13 @@ class ItemResourceTest(BaseTest):
             "description": ""
         }
         response = self.client.put(
-            '/api/v1/bucketlists/{}/items/{}'.format(self.bucketlist_with_items_id, self.item_one_id),
+            '/api/v1/bucketlists/{}/items/{}'.format(
+                self.bucketlist_with_items_id, self.item_one_id),
             data=json.dumps(updates),
             headers=self.headers)
         self.assertTrue(b'empty strings not allowed' in response.data)
 
-    #delete item
+    # delete item
     def test_item_successfully_deleted(self):
         response = self.client.delete(
             '/api/v1/bucketlists/{}/items/{}'.format(
@@ -190,7 +195,3 @@ class ItemResourceTest(BaseTest):
                 self.bucketlist_with_items_id, 40000),
             headers=self.headers)
         self.assertTrue(b'item does not exist' in response.data)
-
-    
-
-        

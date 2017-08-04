@@ -34,6 +34,7 @@ class UserResourceTest(BaseTest):
         response = self.client.post(
             '/api/v1/auth/login', data=json.dumps(user),
             headers=self.headers)
+        self.assertTrue(response.status_code == 200)
         self.assertTrue(b'access_token' in response.data)
 
     def test_wrong_login_credentials_returns_correct_message(self):
@@ -44,6 +45,7 @@ class UserResourceTest(BaseTest):
         response = self.client.post(
             '/api/v1/auth/login', data=json.dumps(user),
             headers=self.headers)
+        self.assertTrue(response.status_code == 401)
         self.assertTrue(b'Invalid credentials' in response.data)
 
     def test_login_with_empty_submit_returns_correct_message(self):
@@ -62,7 +64,7 @@ class UserResourceTest(BaseTest):
         response = self.client.post(
             '/api/v1/auth/register', data=json.dumps(user),
             headers=self.headers)
-        self.assertTrue(response.status_code == 200)
+        self.assertTrue(response.status_code == 201)
 
     def test_succesful_register_contains_success_message(self):
         user = self.temp_user
@@ -78,6 +80,7 @@ class UserResourceTest(BaseTest):
         response = self.client.post(
             '/api/v1/auth/register', data=json.dumps(user),
             headers=self.headers)
+        self.assertTrue(response.status_code == 400)
         self.assertTrue(b'username is required' in response.data)
 
     def test_register_missing_email_message(self):
@@ -86,6 +89,7 @@ class UserResourceTest(BaseTest):
         response = self.client.post(
             '/api/v1/auth/register', data=json.dumps(user),
             headers=self.headers)
+        self.assertTrue(response.status_code == 400)
         self.assertTrue(b'email is required' in response.data)
 
 
@@ -95,6 +99,7 @@ class UserResourceTest(BaseTest):
         response = self.client.post(
             '/api/v1/auth/register', data=json.dumps(user),
             headers=self.headers)
-        self.assertTrue(b'Make password should match '
+        self.assertTrue(response.status_code == 400)
+        self.assertTrue(b'password should match '
                         b'confirm password' in response.data)
     
