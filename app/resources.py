@@ -1,7 +1,8 @@
 from passlib.hash import bcrypt
 
 from flask_jwt import JWT, jwt_required, current_identity
-from flask_restful import Api, Resource, abort, fields, marshal, reqparse
+from flask_restful import (Api, Resource, abort,
+                           fields, marshal, reqparse)
 
 from app import app, db
 from .models import Bucketlist, Item, User
@@ -54,7 +55,9 @@ class UserResource(Resource):
                                 args['email'], hash)
                     db.session.add(user)
                     db.session.commit()
-                    return {'message': 'user successfully registered!'}, 201
+                    return {
+                        'message': 'user successfully registered!'
+                    }, 201
                 else:
                     return {'message': 'password should match '
                                        'confirm password'}, 400
@@ -71,10 +74,10 @@ class BucketlistResource(Resource):
     @jwt_required()
     def get(self, id=None):
         bucketlist_fields = {
-                    'id': fields.Integer,
-                    'name': fields.String,
-                    'description': fields.String
-                }
+            'id': fields.Integer,
+            'name': fields.String,
+            'description': fields.String
+        }
 
         if id is not None:
             bucketlist = Bucketlist.query.get(id)
@@ -83,8 +86,11 @@ class BucketlistResource(Resource):
             else:
                 return {'message': 'requested id does not exist'}, 404
         else:
-            bucketlists = Bucketlist.query.all()
-            return marshal(bucketlists, bucketlist_fields)
+            bucketlists = Bucketlist.query.order_by(
+                Bucketlist.id.asc()).filter_by(
+                owner_id=current_identity['user_id']).all()
+            return {"bucketlists": marshal(bucketlists,
+                                           bucketlist_fields)}
 
     @jwt_required()
     def post(self):
@@ -127,7 +133,9 @@ class BucketlistResource(Resource):
 
                 db.session.merge(bucketlist)
                 db.session.commit()
-                return {'message': 'bucketlist updated successfully'}, 200
+                return {
+                    'message': 'bucketlist updated successfully'
+                }, 200
         else:
             return {'message': 'does not exist'}, 404
 
@@ -139,7 +147,9 @@ class BucketlistResource(Resource):
             db.session.commit()
             return {'message': 'bucketlist deleted successfully'}, 200
         else:
-            return {'message': 'cannot delete non-existent bucketlist'}, 404
+            return {
+                'message': 'cannot delete non-existent bucketlist'
+            }, 404
 
 
 class ItemResource(Resource):
@@ -151,10 +161,10 @@ class ItemResource(Resource):
         bucketlist = Bucketlist.query.get(id)
 
         item_fields = {
-                    'id': fields.Integer,
-                    'title': fields.String,
-                    'description': fields.String
-                }
+            'id': fields.Integer,
+            'title': fields.String,
+            'description': fields.String
+        }
 
         if bucketlist is not None:
             if item_id is not None:
@@ -173,13 +183,15 @@ class ItemResource(Resource):
     @jwt_required()
     def post(self, id):
         parser = reqparse.RequestParser()
-        parser.add_argument('title', type=str, required=True, location='json')
-        parser.add_argument('description', type=str, required=True, location='json')
+        parser.add_argument('title', type=str,
+                            required=True, location='json')
+        parser.add_argument('description', type=str,
+                            required=True, location='json')
 
         args = parser.parse_args(strict=True)
         if len(args['title'].strip()) == 0 or len(
-                    args['description'].strip()) == 0:
-                return {'message': 'empty strings not allowed'}, 400
+                args['description'].strip()) == 0:
+            return {'message': 'empty strings not allowed'}, 400
         else:
             new_item = Item(args['title'], args['description'], id)
             db.session.add(new_item)
@@ -187,10 +199,12 @@ class ItemResource(Resource):
             return {'message': 'item created successfully'}, 201
 
     @jwt_required()
-    def put(self, id, item_id):        
+    def put(self, id, item_id):
         parser = reqparse.RequestParser()
-        parser.add_argument('title', type=str, required=True, location='json')
-        parser.add_argument('description', type=str, required=True, location='json')
+        parser.add_argument('title', type=str,
+                            required=True, location='json')
+        parser.add_argument('description', type=str,
+                            required=True, location='json')
 
         args = parser.parse_args(strict=True)
 
@@ -215,9 +229,10 @@ class ItemResource(Resource):
             db.session.delete(item)
             db.session.commit()
             return {'message': 'item deleted successfully'}, 200
-        else: 
-            return {'message': 'cannot delete, item does not exist'}, 404
-        
+        else:
+            return {
+                'message': 'cannot delete, item does not exist'
+            }, 404
 
 
 api.add_resource(UserResource, '/auth/register')
