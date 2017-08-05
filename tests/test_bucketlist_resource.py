@@ -16,6 +16,11 @@ class BucketlistResourceTest(BaseTest):
             "password": "lion"
         }
         
+        self.other_user = {
+            "username": self.saved_user_2.username,
+            "password": "qwerty"
+        }
+        
         # create a bucketlist for tyrion
         current_user = User.query.filter_by(
             username=self.saved_user.username).first()
@@ -62,7 +67,7 @@ class BucketlistResourceTest(BaseTest):
 
     def test_all_bucketlists_are_returned(self):
         response = self.client.get(
-            '/api/v1/bucketlists', data=json.dumps(self.user),
+            '/api/v1/bucketlists',
             headers=self.headers)
         self.assertTrue(b'bucketlist_one' in response.data
                         and b'bucketlist_two' in response.data)
@@ -209,4 +214,16 @@ class BucketlistResourceTest(BaseTest):
         self.assertTrue(response.status_code == 404)
         self.assertTrue(
             b'cannot delete non-existent bucketlist' in response.data)
+
+    def test_user_bucketlist_is_not_accessed_by_other_user(self):
+        self.response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(self.other_user),
+            headers=self.headers)
+        self.response_content = json.loads(self.response.data)
+        self.headers['Authorization'] = 'JWT {}'.format(
+            self.response_content['access_token'])
+        response = self.client.get(
+            '/api/v1/bucketlists', data={},
+            headers=self.headers)
+        self.assertFalse(b'bucketlist_one' in response.data)
     
