@@ -114,7 +114,7 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists',
             query_string=dict(page='1'),
             headers=self.headers)
-        self.assertTrue(b'"next": "/api/v1/bucketlists?'\
+        self.assertTrue(b'"next": "/api/v1/bucketlists?'
                         b'page=2&limit=10"' in response.data)
 
     def test_bucketlist_returned_when_q_is_specified(self):
@@ -177,7 +177,8 @@ class BucketlistResourceTest(BaseTest):
             data=json.dumps(new_bucketlist),
             headers=self.headers)
         self.assertTrue(response.status_code, 201)
-        self.assertTrue(b'bucketlist created successfully' in response.data)
+        self.assertTrue(
+            b'bucketlist created successfully' in response.data)
 
     def test_create_bucketlist_request_missing_field_message(self):
         new_bucketlist = {
@@ -288,10 +289,10 @@ class BucketlistResourceTest(BaseTest):
         self.response_content = json.loads(self.response.data)
         self.headers['Authorization'] = 'JWT {}'.format(
             self.response_content['access_token'])
-        
+
         response = self.client.delete(
             '/api/v1/bucketlists/{}'.format(
                 self.example_bucketlist_one.id),
             headers=self.headers)
         self.assertFalse(b'bucketlist deleted successfully'
-                        in response.data)
+                         in response.data)

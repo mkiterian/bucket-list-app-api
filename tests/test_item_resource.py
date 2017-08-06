@@ -42,7 +42,8 @@ class ItemResourceTest(BaseTest):
         db.session.add(self.item_2)
         db.session.commit()
 
-        self.item_one_id = Item.query.filter_by(title='Item one').first().id
+        self.item_one_id = Item.query.filter_by(
+            title='Item one').first().id
 
         self.response = self.client.post(
             '/api/v1/auth/login', data=json.dumps(self.user),
@@ -135,7 +136,7 @@ class ItemResourceTest(BaseTest):
             '/api/v1/bucketlists/{}/items'.format(self.item_one_id),
             data=json.dumps(new_item),
             headers=self.headers)
-        self.assertTrue(response.status_code==401)
+        self.assertTrue(response.status_code == 401)
         self.assertTrue(b'Invalid bucketlist id' in response.data)
 
     def test_create_item_request_missing_field_message(self):
@@ -206,7 +207,7 @@ class ItemResourceTest(BaseTest):
                 self.bucketlist_with_items_id, self.item_one_id),
             data=json.dumps(updates),
             headers=self.headers)
-        self.assertTrue(response.status_code==404)
+        self.assertTrue(response.status_code == 404)
         self.assertTrue(b'Invalid bucketlist id' in response.data)
 
     def test_message_on_update_with_missing_parameter(self):
@@ -259,5 +260,5 @@ class ItemResourceTest(BaseTest):
             '/api/v1/bucketlists/{}/items/{}'.format(
                 self.bucketlist_with_items_id, self.item_one_id),
             headers=self.headers)
-        self.assertTrue(response.status_code==404)
+        self.assertTrue(response.status_code == 404)
         self.assertTrue(b'Invalid bucketlist id' in response.data)

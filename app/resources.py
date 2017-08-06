@@ -108,7 +108,8 @@ class BucketlistResource(Resource):
 
                 if args['q']:
                     bucketlists = Bucketlist.query.filter(
-                        Bucketlist.owner_id == current_identity['user_id'],
+                        Bucketlist.owner_id == (
+                            current_identity['user_id']),
                         Bucketlist.name.contains(args['q'])
                     ).order_by(
                         Bucketlist.id.asc()).paginate(
@@ -120,7 +121,8 @@ class BucketlistResource(Resource):
 
                 else:
                     result = Bucketlist.query.filter(
-                        Bucketlist.owner_id == current_identity['user_id']
+                        Bucketlist.owner_id == (
+                            current_identity['user_id'])
                     ).order_by(
                         Bucketlist.id.asc())
                     if int(args['page']) > (
@@ -336,7 +338,9 @@ class ItemResource(Resource):
                     item.description = args['description']
                     db.session.merge(item)
                     db.session.commit()
-                    return {'message': 'item updated successfully'}, 200
+                    return {
+                        'message': 'item updated successfully'
+                    }, 200
             else:
                 return {'message': 'item does not exist'}, 404
         else:
