@@ -81,7 +81,9 @@ class BucketlistResource(Resource):
         }
 
         if id is not None:
-            bucketlist = Bucketlist.query.get(id)
+            bucketlist = Bucketlist.query.filter_by(
+                owner_id=current_identity['user_id'],
+                id=id).first()
             if bucketlist is not None:
                 return marshal(bucketlist, bucketlist_fields)
             else:
@@ -106,6 +108,7 @@ class BucketlistResource(Resource):
 
                 if args['q']:
                     bucketlists = Bucketlist.query.filter(
+                        Bucketlist.owner_id==current_identity['user_id'],
                         Bucketlist.name.contains(args['q'])
                     ).order_by(
                         Bucketlist.id.asc()).paginate(
@@ -116,7 +119,9 @@ class BucketlistResource(Resource):
                         }, 404
 
                 else:
-                    result = Bucketlist.query.order_by(
+                    result = Bucketlist.query.filter(
+                        Bucketlist.owner_id==current_identity['user_id']
+                    ).order_by(
                         Bucketlist.id.asc())
                     if int(args['page']) > (
                             len(result.all()) / int(args['limit']) + 1):
@@ -173,7 +178,9 @@ class BucketlistResource(Resource):
 
         args = parser.parse_args(strict=True)
 
-        bucketlist = Bucketlist.query.filter_by(id=id).first()
+        bucketlist = Bucketlist.query.filter_by(
+            owner_id=current_identity['user_id'],
+            id=id).first()
         if bucketlist:
             if len(args['name'].strip()) == 0 or len(
                     args['description'].strip()) == 0:
@@ -192,7 +199,9 @@ class BucketlistResource(Resource):
 
     @jwt_required()
     def delete(self, id):
-        bucketlist = Bucketlist.query.get(id)
+        bucketlist = Bucketlist.query.filter_by(
+            owner_id=current_identity['user_id'],
+            id=id).first()
         if bucketlist is not None:
             db.session.delete(bucketlist)
             db.session.commit()
