@@ -15,12 +15,12 @@ class BucketlistResourceTest(BaseTest):
             "username": self.saved_user.username,
             "password": "lion"
         }
-        
+
         self.other_user = {
             "username": self.saved_user_2.username,
             "password": "qwerty"
         }
-        
+
         # create a bucketlist for tyrion
         current_user = User.query.filter_by(
             username=self.saved_user.username).first()
@@ -58,7 +58,7 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists', data=json.dumps(self.user),
             headers=self.headers)
         self.assertEqual(response.status_code, 200)
-    
+
     def test_if_bucketlist_name_is_returned(self):
         response = self.client.get(
             '/api/v1/bucketlists', data=json.dumps(self.user),
@@ -81,17 +81,34 @@ class BucketlistResourceTest(BaseTest):
         self.assertTrue(response.status_code == 401)
         self.assertTrue(b'Authorization Required' in response.data)
 
-    def test_user_cannot_view_second_bucketlist_when_limit_is_one(self):
-        self.headers["Content-Type"]= "None"
+    def test_user_cant_view_second_bucketlist_when_limit_is_one(self):
+        self.headers["Content-Type"] = "None"
         response = self.client.get(
             '/api/v1/bucketlists',
-            query_string = dict(limit='1'),
+            query_string=dict(limit='1'),
             headers=self.headers)
         self.assertTrue(response.data.count(b'id'), 1)
         self.assertFalse(b'bucketlist_two' in response.data)
 
+    def test_user_can_view_items_when_page_is_specified(self):
+        self.headers["Content-Type"] = "None"
+        response = self.client.get(
+            '/api/v1/bucketlists',
+            query_string=dict(page='1'),
+            headers=self.headers)
+        self.assertTrue(response.data.count(b'id'), 2)
+        self.assertTrue(b'bucketlist_one' in response.data)
 
-    #view specific bucketlist
+    def test_next_page_is_page_2_when_page_is_set_to_1(self):
+        self.headers["Content-Type"] = "None"
+        response = self.client.get(
+            '/api/v1/bucketlists',
+            query_string=dict(page='1'),
+            headers=self.headers)
+        self.assertTrue(b'"next": "/api/v1/bucketlists?'\
+                        b'page=2&limit=10"' in response.data)
+
+    # view specific bucketlist
     def test_successful_status_code_when_bucket_id_is_specified(self):
         response = self.client.get(
             '/api/v1/bucketlists/{}'.format(self.bucketlist_one_id),
@@ -167,7 +184,7 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists',
             data=json.dumps(new_bucketlist),
             headers=no_token)
-        self.assertTrue(response.status_code==401)
+        self.assertTrue(response.status_code == 401)
         self.assertTrue(b'Authorization Required' in response.data)
 
     # Update bucketlists tests
@@ -236,4 +253,3 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists', data={},
             headers=self.headers)
         self.assertFalse(b'bucketlist_one' in response.data)
-    
