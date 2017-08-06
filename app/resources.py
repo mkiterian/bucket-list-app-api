@@ -108,7 +108,7 @@ class BucketlistResource(Resource):
 
                 if args['q']:
                     bucketlists = Bucketlist.query.filter(
-                        Bucketlist.owner_id==current_identity['user_id'],
+                        Bucketlist.owner_id == current_identity['user_id'],
                         Bucketlist.name.contains(args['q'])
                     ).order_by(
                         Bucketlist.id.asc()).paginate(
@@ -120,7 +120,7 @@ class BucketlistResource(Resource):
 
                 else:
                     result = Bucketlist.query.filter(
-                        Bucketlist.owner_id==current_identity['user_id']
+                        Bucketlist.owner_id == current_identity['user_id']
                     ).order_by(
                         Bucketlist.id.asc())
                     if int(args['page']) > (
@@ -218,7 +218,10 @@ class ItemResource(Resource):
     '''
     @jwt_required()
     def get(self, id, item_id=None):
-        bucketlist = Bucketlist.query.get(id)
+        bucketlist = Bucketlist.query.filter_by(
+            id=id,
+            owner_id=current_identity['user_id']
+        ).first()
 
         item_fields = {
             'id': fields.Integer,
@@ -228,7 +231,7 @@ class ItemResource(Resource):
 
         if bucketlist is not None:
             if item_id is not None:
-                item = Item.query.filter_by(bucket_id=id,
+                item = Item.query.filter_by(bucket_id=bucketlist.id,
                                             id=item_id).first()
                 if item:
                     return marshal(item, item_fields)
@@ -237,7 +240,9 @@ class ItemResource(Resource):
             else:
                 if (not request.args.get('page')
                         and not request.args.get('limit')):
-                    items = Item.query.filter_by(bucket_id=id).all()
+                    items = Item.query.filter_by(
+                        bucket_id=bucketlist.id
+                    ).all()
                     return marshal(items, item_fields)
                 else:
                     parser = reqparse.RequestParser()
@@ -254,7 +259,9 @@ class ItemResource(Resource):
                                         location='args')
                     args = parser.parse_args(strict=True)
 
-                    items = Item.query.order_by(
+                    items = Item.query.filter(
+                        Item.bucket_id == bucketlist.id
+                    ).order_by(
                         Item.id.asc()).paginate(
                         args['page'], args['limit'], error_out=False)
 
@@ -292,6 +299,11 @@ class ItemResource(Resource):
 
     @jwt_required()
     def put(self, id, item_id):
+        bucketlist = Bucketlist.query.filter_by(
+            id=id,
+            owner_id=current_identity['user_id']
+        ).first()
+
         parser = reqparse.RequestParser()
         parser.add_argument('title', type=str,
                             required=True, location='json')
@@ -300,7 +312,7 @@ class ItemResource(Resource):
 
         args = parser.parse_args(strict=True)
 
-        item = Item.query.filter_by(id=item_id, bucket_id=id).first()
+        item = Item.query.filter_by(id=item_id, bucket_id=bucketlist.id).first()
         if item:
             if len(args['title'].strip()) == 0 or len(
                     args['description'].strip()) == 0:
@@ -316,7 +328,12 @@ class ItemResource(Resource):
 
     @jwt_required()
     def delete(self, id, item_id):
-        item = Item.query.filter_by(id=item_id, bucket_id=id).first()
+        bucketlist = Bucketlist.query.filter_by(
+            id=id,
+            owner_id=current_identity['user_id']
+        ).first()
+
+        item = Item.query.filter_by(id=item_id, bucket_id=bucketlist.id).first()
         if item:
             db.session.delete(item)
             db.session.commit()
