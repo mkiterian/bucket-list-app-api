@@ -87,8 +87,8 @@ class BucketlistResource(Resource):
             else:
                 return {'message': 'requested id does not exist'}, 404
         else:
-            if (not request.args.get('page') 
-            and not request.args.get('limit')):
+            if (not request.args.get('page')
+                    and not request.args.get('limit')):
                 bucketlists = Bucketlist.query.order_by(
                     Bucketlist.id.asc()).filter_by(
                     owner_id=current_identity['user_id']).all()
@@ -99,7 +99,7 @@ class BucketlistResource(Resource):
                 parser = reqparse.RequestParser()
                 parser.add_argument('page',
                                     type=int,
-                                    default=1, 
+                                    default=1,
                                     location='args')
                 parser.add_argument('limit',
                                     type=int,
@@ -203,8 +203,37 @@ class ItemResource(Resource):
                 else:
                     return {'message': 'item does not exist'}, 404
             else:
-                items = Item.query.filter_by(bucket_id=id).all()
-                return marshal(items, item_fields)
+                if (not request.args.get('page')
+                        and not request.args.get('limit')):
+                    items = Item.query.filter_by(bucket_id=id).all()
+                    return marshal(items, item_fields)
+                else:
+                    parser = reqparse.RequestParser()
+                    parser.add_argument('page',
+                                        type=int,
+                                        default=1,
+                                        location='args')
+                    parser.add_argument('limit',
+                                        type=int,
+                                        default=10,
+                                        location='args')
+                    args = parser.parse_args(strict=True)
+
+                    items = Item.query.order_by(
+                        Item.id.asc()).paginate(
+                        args['page'], args['limit'], error_out=False)
+
+                    return {
+                        "count": len(items.items),
+                        "next": "/api/v1/bucketlists/{}"\
+                        "/items?page={}&limit={}"
+                        .format(id, args['page'] + 1, args['limit']),
+                        "previous": "/api/v1/bucketlists/{}"\
+                        "/items?page={}&limit={}"
+                        .format(id, args['page'] - 1, args['limit']),
+                        "items": marshal(items.items,
+                                               item_fields)}
+
         else:
             return {'message': 'bucketlist does not exist'}, 404
 
