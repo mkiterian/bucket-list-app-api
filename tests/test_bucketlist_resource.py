@@ -280,3 +280,18 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists', data={},
             headers=self.headers)
         self.assertFalse(b'bucketlist_one' in response.data)
+
+    def test_user_bucketlist_is_not_deleted_by_other_user(self):
+        self.response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(self.other_user),
+            headers=self.headers)
+        self.response_content = json.loads(self.response.data)
+        self.headers['Authorization'] = 'JWT {}'.format(
+            self.response_content['access_token'])
+        
+        response = self.client.delete(
+            '/api/v1/bucketlists/{}'.format(
+                self.example_bucketlist_one.id),
+            headers=self.headers)
+        self.assertFalse(b'bucketlist deleted successfully'
+                        in response.data)
