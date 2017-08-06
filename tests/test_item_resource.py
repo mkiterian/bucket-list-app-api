@@ -73,7 +73,6 @@ class ItemResourceTest(BaseTest):
         response = self.client.get(
             '/api/v1/bucketlists/2000/items', data={},
             headers=self.headers)
-        print(response.data)
         self.assertTrue(b'bucketlist does not exist' in response.data)
 
     def test_cannot_view_item_two_when_limit_is_set_to_one(self):
@@ -113,7 +112,6 @@ class ItemResourceTest(BaseTest):
             '/api/v1/bucketlists/{}/items'.format(self.item_one_id),
             data=json.dumps(new_item),
             headers=self.headers)
-        print(response.data)
         self.assertTrue(b'item created successfully' in response.data)
 
     def test_create_item_request_missing_field_message(self):
@@ -125,7 +123,6 @@ class ItemResourceTest(BaseTest):
                 self.bucketlist_with_items_id),
             data=json.dumps(new_item),
             headers=self.headers)
-        print(response.data)
         self.assertTrue(b'Missing required parameter' in response.data)
 
     def test_create_item_with_empty_strings(self):
@@ -138,7 +135,6 @@ class ItemResourceTest(BaseTest):
                 self.bucketlist_with_items_id),
             data=json.dumps(new_item),
             headers=self.headers)
-        print(response.data)
         self.assertTrue(b'empty strings not allowed' in response.data)
 
     def test_cant_create_item_without_authentication(self):
