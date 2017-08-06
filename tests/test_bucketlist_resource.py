@@ -1,7 +1,7 @@
-from flask_sqlalchemy import SQLAlchemy
 import unittest
 import json
 from passlib.hash import bcrypt
+from flask_sqlalchemy import SQLAlchemy
 
 from app import app, db
 from app.models import User, Bucketlist
@@ -80,6 +80,17 @@ class BucketlistResourceTest(BaseTest):
             headers=no_token)
         self.assertTrue(response.status_code == 401)
         self.assertTrue(b'Authorization Required' in response.data)
+
+    def test_user_cannot_view_second_bucketlist_when_limit_is_one(self):
+        self.headers["Content-Type"]= "None"
+        response = self.client.get(
+            '/api/v1/bucketlists',
+            query_string = dict(limit='1'),
+            headers=self.headers)
+        print(response.data)
+        self.assertTrue(response.data.count(b'id'), 1)
+        self.assertFalse(b'bucketlist_two' in response.data)
+
 
     #view specific bucketlist
     def test_successful_status_code_when_bucket_id_is_specified(self):
