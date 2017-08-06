@@ -292,10 +292,20 @@ class ItemResource(Resource):
                 args['description'].strip()) == 0:
             return {'message': 'empty strings not allowed'}, 400
         else:
-            new_item = Item(args['title'], args['description'], id)
-            db.session.add(new_item)
-            db.session.commit()
-            return {'message': 'item created successfully'}, 201
+            bucketlist = Bucketlist.query.filter_by(
+                id=id,
+                owner_id=current_identity['user_id']
+            ).first()
+            if bucketlist:
+                new_item = Item(args['title'], args['description'],
+                                bucketlist.id)
+                db.session.add(new_item)
+                db.session.commit()
+                return {'message': 'item created successfully'}, 201
+            else:
+                return {
+                    'message': 'Invalid bucketlist id'
+                }, 401
 
     @jwt_required()
     def put(self, id, item_id):
@@ -312,19 +322,25 @@ class ItemResource(Resource):
 
         args = parser.parse_args(strict=True)
 
-        item = Item.query.filter_by(id=item_id, bucket_id=bucketlist.id).first()
-        if item:
-            if len(args['title'].strip()) == 0 or len(
-                    args['description'].strip()) == 0:
-                return {'message': 'empty strings not allowed'}, 400
+        if bucketlist:
+            item = Item.query.filter_by(
+                id=item_id, bucket_id=bucketlist.id).first()
+            if item:
+                if len(args['title'].strip()) == 0 or len(
+                        args['description'].strip()) == 0:
+                    return {
+                        'message': 'empty strings not allowed'
+                    }, 400
+                else:
+                    item.title = args['title']
+                    item.description = args['description']
+                    db.session.merge(item)
+                    db.session.commit()
+                    return {'message': 'item updated successfully'}, 200
             else:
-                item.title = args['title']
-                item.description = args['description']
-                db.session.merge(item)
-                db.session.commit()
-                return {'message': 'item updated successfully'}, 200
+                return {'message': 'item does not exist'}, 404
         else:
-            return {'message': 'item does not exist'}, 404
+            return {'message': 'Invalid bucketlist id'}, 404
 
     @jwt_required()
     def delete(self, id, item_id):
@@ -332,16 +348,19 @@ class ItemResource(Resource):
             id=id,
             owner_id=current_identity['user_id']
         ).first()
-
-        item = Item.query.filter_by(id=item_id, bucket_id=bucketlist.id).first()
-        if item:
-            db.session.delete(item)
-            db.session.commit()
-            return {'message': 'item deleted successfully'}, 200
+        if bucketlist:
+            item = Item.query.filter_by(
+                id=item_id, bucket_id=bucketlist.id).first()
+            if item:
+                db.session.delete(item)
+                db.session.commit()
+                return {'message': 'item deleted successfully'}, 200
+            else:
+                return {
+                    'message': 'cannot delete, item does not exist'
+                }, 404
         else:
-            return {
-                'message': 'cannot delete, item does not exist'
-            }, 404
+            return {'message': 'Invalid bucketlist id'}, 404
 
 
 api.add_resource(UserResource, '/auth/register')
