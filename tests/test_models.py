@@ -30,10 +30,17 @@ class BucketlistTestCase(TestCase):
     def test_bucketlist_has_item_property(self):
         self.assertTrue(hasattr(self.bucketlist, 'items'))
 
+    def test_bucketlist_name_is_set(self):
+        self.assertEqual(str(self.bucketlist), 'Vacationing')
+
+
 class ItemTestCase(TestCase):
     def setUp(self):
         self.item = Item('Go to Egypt', 'It\'s a pyramid scheme', 100)
         print(self.item)
 
     def test_item_has_been_created(self):
+        self.assertEqual(str(self.item), 'Go to Egypt')
+
+    def test_item_title_is_set(self):
         self.assertEqual(str(self.item), 'Go to Egypt')
