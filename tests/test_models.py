@@ -37,7 +37,6 @@ class BucketlistTestCase(TestCase):
 class ItemTestCase(TestCase):
     def setUp(self):
         self.item = Item('Go to Egypt', 'It\'s a pyramid scheme', 100)
-        print(self.item)
 
     def test_item_has_been_created(self):
         self.assertEqual(str(self.item), 'Go to Egypt')
