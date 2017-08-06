@@ -116,9 +116,16 @@ class BucketlistResource(Resource):
                         }, 404
 
                 else:
-                    bucketlists = Bucketlist.query.order_by(
-                        Bucketlist.id.asc()).paginate(
-                        args['page'], args['limit'], error_out=False)
+                    result = Bucketlist.query.order_by(
+                        Bucketlist.id.asc())
+                    if int(args['page']) > (
+                            len(result.all()) / int(args['limit']) + 1):
+                        return {'message': 'Page does not exist'}, 404
+                    else:
+                        bucketlists = result.paginate(
+                            args['page'],
+                            args['limit'],
+                            error_out=False)
 
                 return {
                     "count": len(bucketlists.items),
