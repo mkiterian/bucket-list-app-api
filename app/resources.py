@@ -126,7 +126,8 @@ class BucketlistResource(Resource):
                     ).order_by(
                         Bucketlist.id.asc())
                     if int(args['page']) > (
-                            len(result.all()) / int(args['limit']) + 1):
+                            len(result.all()) / int(args['limit']) + 1
+                            ) or int(args['page']) < 1:
                         return {'message': 'Page does not exist'}, 404
                     else:
                         bucketlists = result.paginate(
