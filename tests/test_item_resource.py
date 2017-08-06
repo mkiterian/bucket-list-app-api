@@ -50,7 +50,7 @@ class ItemResourceTest(BaseTest):
         super(ItemResourceTest, self).tearDown()
 
     # view items
-    def test_item_names_returned_by_view_bucketlists(self):
+    def test_item_names_returned_by_view_bucketlists_items(self):
         response = self.client.get(
             '/api/v1/bucketlists/{}/items'.format(
                 self.bucketlist_with_items_id),
@@ -66,7 +66,7 @@ class ItemResourceTest(BaseTest):
             '/api/v1/bucketlists/{}/items'.format(
                 self.bucketlist_with_items_id),
             headers=no_token)
-        self.assertTrue(response.status_code==401)
+        self.assertTrue(response.status_code == 401)
         self.assertTrue(b'Authorization Required' in response.data)
 
     def test_response_message_for_non_existent_id(self):
@@ -75,6 +75,17 @@ class ItemResourceTest(BaseTest):
             headers=self.headers)
         print(response.data)
         self.assertTrue(b'bucketlist does not exist' in response.data)
+
+    def test_cannot_view_item_two_when_limit_is_set_to_one(self):
+        self.headers["Content-Type"] = "None"
+        response = self.client.get(
+            '/api/v1/bucketlists/{}/items'.format(
+                self.bucketlist_with_items_id),
+            query_string=dict(limit='1'),
+            headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.data.count(b'id'), 1)
+        self.assertFalse(b'Item two' in response.data)
 
     # view item
     def test_item_name_returned_when_item_id_is_specified(self):
@@ -142,7 +153,7 @@ class ItemResourceTest(BaseTest):
                 self.bucketlist_with_items_id),
             data=json.dumps(new_item),
             headers=no_token)
-        self.assertTrue(response.status_code==401)
+        self.assertTrue(response.status_code == 401)
         self.assertTrue(b'Authorization Required' in response.data)
 
     # update item

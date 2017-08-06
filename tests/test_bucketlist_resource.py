@@ -87,7 +87,6 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists',
             query_string = dict(limit='1'),
             headers=self.headers)
-        print(response.data)
         self.assertTrue(response.data.count(b'id'), 1)
         self.assertFalse(b'bucketlist_two' in response.data)
 
