@@ -108,6 +108,24 @@ class BucketlistResourceTest(BaseTest):
         self.assertTrue(b'"next": "/api/v1/bucketlists?'\
                         b'page=2&limit=10"' in response.data)
 
+    def test_bucketlist_returned_when_q_is_specified(self):
+        self.headers["Content-Type"] = "None"
+        response = self.client.get(
+            '/api/v1/bucketlists',
+            query_string=dict(q='two'),
+            headers=self.headers)
+        self.assertTrue(response.status_code == 200)
+        self.assertTrue(b'bucketlist_two' in response.data)
+
+    def test_message_when_name_in_q_does_not_exist(self):
+        self.headers["Content-Type"] = "None"
+        response = self.client.get(
+            '/api/v1/bucketlists',
+            query_string=dict(q='millions'),
+            headers=self.headers)
+        self.assertTrue(response.status_code == 404)
+        self.assertTrue(b'Bucketlist does not exist' in response.data)
+
     # view specific bucketlist
     def test_successful_status_code_when_bucket_id_is_specified(self):
         response = self.client.get(
