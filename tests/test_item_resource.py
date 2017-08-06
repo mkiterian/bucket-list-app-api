@@ -16,6 +16,11 @@ class ItemResourceTest(BaseTest):
             "password": "lion"
         }
 
+        self.other_user = {
+            "username": self.saved_user_2.username,
+            "password": "qwerty"
+        }
+
         # create a bucketlist for tyrion
         current_user = User.query.filter_by(
             username=self.saved_user.username).first()
@@ -114,6 +119,25 @@ class ItemResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'item created successfully' in response.data)
 
+    def test_user_cant_add_item_to_other_user_bucketlist(self):
+        self.response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(self.other_user),
+            headers=self.headers)
+        self.response_content = json.loads(self.response.data)
+        self.headers['Authorization'] = 'JWT {}'.format(
+            self.response_content['access_token'])
+
+        new_item = {
+            "title": "not allowed",
+            "description": "should not be added"
+        }
+        response = self.client.post(
+            '/api/v1/bucketlists/{}/items'.format(self.item_one_id),
+            data=json.dumps(new_item),
+            headers=self.headers)
+        self.assertTrue(response.status_code==401)
+        self.assertTrue(b'Invalid bucketlist id' in response.data)
+
     def test_create_item_request_missing_field_message(self):
         new_item = {
             "description": "this is my first title"
@@ -165,6 +189,26 @@ class ItemResourceTest(BaseTest):
             headers=self.headers)
         self.assertTrue(b'item updated successfully' in response.data)
 
+    def test_user_cant_update_item_in_other_user_bucketlist(self):
+        self.response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(self.other_user),
+            headers=self.headers)
+        self.response_content = json.loads(self.response.data)
+        self.headers['Authorization'] = 'JWT {}'.format(
+            self.response_content['access_token'])
+
+        updates = {
+            "title": "not allowed",
+            "description": "should not be added"
+        }
+        response = self.client.put(
+            '/api/v1/bucketlists/{}/items/{}'.format(
+                self.bucketlist_with_items_id, self.item_one_id),
+            data=json.dumps(updates),
+            headers=self.headers)
+        self.assertTrue(response.status_code==404)
+        self.assertTrue(b'Invalid bucketlist id' in response.data)
+
     def test_message_on_update_with_missing_parameter(self):
         updates = {
             "description": "descriptive"
@@ -202,3 +246,18 @@ class ItemResourceTest(BaseTest):
                 self.bucketlist_with_items_id, 40000),
             headers=self.headers)
         self.assertTrue(b'item does not exist' in response.data)
+
+    def test_user_cant_delete_item_from_other_users_bucketlist(self):
+        self.response = self.client.post(
+            '/api/v1/auth/login', data=json.dumps(self.other_user),
+            headers=self.headers)
+        self.response_content = json.loads(self.response.data)
+        self.headers['Authorization'] = 'JWT {}'.format(
+            self.response_content['access_token'])
+
+        response = self.client.delete(
+            '/api/v1/bucketlists/{}/items/{}'.format(
+                self.bucketlist_with_items_id, self.item_one_id),
+            headers=self.headers)
+        self.assertTrue(response.status_code==404)
+        self.assertTrue(b'Invalid bucketlist id' in response.data)
