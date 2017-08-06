@@ -99,6 +99,15 @@ class BucketlistResourceTest(BaseTest):
         self.assertTrue(response.data.count(b'id'), 2)
         self.assertTrue(b'bucketlist_one' in response.data)
 
+    def test_page_specified_does_not_exist_message(self):
+        self.headers["Content-Type"] = "None"
+        response = self.client.get(
+            '/api/v1/bucketlists',
+            query_string=dict(page='2000'),
+            headers=self.headers)
+        self.assertTrue(response.status_code == 404)
+        self.assertTrue(b'Page does not exist' in response.data)
+
     def test_next_page_is_page_2_when_page_is_set_to_1(self):
         self.headers["Content-Type"] = "None"
         response = self.client.get(
