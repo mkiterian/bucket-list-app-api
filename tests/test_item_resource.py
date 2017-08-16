@@ -92,6 +92,36 @@ class ItemResourceTest(BaseTest):
         self.assertTrue(response.data.count(b'id'), 1)
         self.assertFalse(b'Item two' in response.data)
 
+    def test_item_is_returned_when_q_parameter_is_set(self):
+        self.headers["Content-Type"] = "None"
+        response = self.client.get(
+            '/api/v1/bucketlists/{}/items'.format(
+                self.bucketlist_with_items_id),
+            query_string=dict(q='two'),
+            headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b'Item two' in response.data)
+
+    def test_item_is_returned_when_page_parameter_is_set(self):
+        self.headers["Content-Type"] = "None"
+        response = self.client.get(
+            '/api/v1/bucketlists/{}/items'.format(
+                self.bucketlist_with_items_id),
+            query_string=dict(page=1),
+            headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b'Item one' in response.data)
+
+    def test_response_when_page_and_limit_parameter_is_set(self):
+        self.headers["Content-Type"] = "None"
+        response = self.client.get(
+            '/api/v1/bucketlists/{}/items'.format(
+                self.bucketlist_with_items_id),
+            query_string=dict(page=2, limit=1),
+            headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(b'Item two' in response.data)
+
     # view item
     def test_item_name_returned_when_item_id_is_specified(self):
         response = self.client.get(
