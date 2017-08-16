@@ -150,14 +150,14 @@ class BucketlistResource(Resource):
                     "previous": "/api/v1/bucketlists?page={}&limit={}"
                     .format(args['page'] - 1, args['limit']),
                     "bucketlists": marshal(bucketlists.items,
-                                           bucketlist_fields)}
+                                           bucketlist_fields)}, 200
 
             else:
                 bucketlists = Bucketlist.query.order_by(
                     Bucketlist.id.asc()).filter_by(
                     owner_id=current_identity['user_id']).all()
                 return {"bucketlists": marshal(bucketlists,
-                                               bucketlist_fields)}
+                                               bucketlist_fields)}, 200
 
     @jwt_required()
     def post(self):
@@ -245,7 +245,7 @@ class ItemResource(Resource):
                 item = Item.query.filter_by(bucket_id=bucketlist.id,
                                             id=item_id).first()
                 if item:
-                    return marshal(item, item_fields)
+                    return marshal(item, item_fields), 200
                 else:
                     return {'message': 'item does not exist'}, 404
             else:
@@ -254,7 +254,7 @@ class ItemResource(Resource):
                     items = Item.query.filter_by(
                         bucket_id=bucketlist.id
                     ).all()
-                    return marshal(items, item_fields)
+                    return marshal(items, item_fields), 200
                 else:
                     parser = reqparse.RequestParser()
                     parser.add_argument('page',
@@ -285,7 +285,7 @@ class ItemResource(Resource):
                         "/items?page={}&limit={}"
                         .format(id, args['page'] - 1, args['limit']),
                         "items": marshal(items.items,
-                                         item_fields)}
+                                         item_fields)}, 200
 
         else:
             return {'message': 'bucketlist does not exist'}, 404
