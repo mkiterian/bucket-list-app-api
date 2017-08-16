@@ -294,5 +294,6 @@ class BucketlistResourceTest(BaseTest):
             '/api/v1/bucketlists/{}'.format(
                 self.example_bucketlist_one.id),
             headers=self.headers)
+        self.assertEqual(response.status_code, 404)
         self.assertFalse(b'bucketlist deleted successfully'
                          in response.data)
