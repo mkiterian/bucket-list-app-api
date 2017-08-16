@@ -115,12 +115,11 @@ class BucketlistResource(Resource):
 
                     if int(args['page']) > (
                             len(result.all()) / int(args['limit']) + 1
-                            ) or int(args['page']) < 1:
+                    ) or int(args['page']) < 1:
                         return {'message': 'Page does not exist'}, 404
                     else:
                         bucketlists = result.paginate(
-                        args['page'], args['limit'], error_out=False)
-
+                            args['page'], args['limit'], error_out=False)
 
                     if len(bucketlists.items) < 1:
                         return {
@@ -135,7 +134,7 @@ class BucketlistResource(Resource):
                         Bucketlist.id.asc())
                     if int(args['page']) > (
                             len(result.all()) / int(args['limit']) + 1
-                            ) or int(args['page']) < 1:
+                    ) or int(args['page']) < 1:
                         return {'message': 'Page does not exist'}, 404
                     else:
                         bucketlists = result.paginate(
@@ -249,13 +248,7 @@ class ItemResource(Resource):
                 else:
                     return {'message': 'item does not exist'}, 404
             else:
-                if (not request.args.get('page')
-                        and not request.args.get('limit')):
-                    items = Item.query.filter_by(
-                        bucket_id=bucketlist.id
-                    ).all()
-                    return marshal(items, item_fields), 200
-                else:
+                if request.args:
                     parser = reqparse.RequestParser()
                     parser.add_argument('page',
                                         type=int,
@@ -270,11 +263,43 @@ class ItemResource(Resource):
                                         location='args')
                     args = parser.parse_args(strict=True)
 
-                    items = Item.query.filter(
-                        Item.bucket_id == bucketlist.id
-                    ).order_by(
-                        Item.id.asc()).paginate(
-                        args['page'], args['limit'], error_out=False)
+                    items = None
+
+
+                    if args['q']:
+                        result = Item.query.filter(
+                            Item.bucket_id == bucketlist.id,
+                            Item.title.contains(args['q'])
+                        ).order_by(
+                            Item.id.asc())
+
+                        if int(args['page']) > (
+                                len(result.all()) / int(args['limit']) + 1
+                        ) or int(args['page']) < 1:
+                            return {'message': 'Page does not exist'}, 404
+                        else:
+                            items = result.paginate(
+                                args['page'], args['limit'], error_out=False)
+
+                        if len(items.items) < 1:
+                            return {
+                                'message': 'Item does not exist'
+                            }, 404
+
+                    else:
+                        result = Item.query.filter(
+                            Item.bucket_id == bucketlist.id
+                        ).order_by(Item.id.asc())
+
+                        if int(args['page']) > (
+                                len(result.all()) / int(args['limit']) + 1
+                        ) or int(args['page']) < 1:
+                            return {'message': 'Page does not exist'}, 404
+                        else:
+                            items = result.paginate(
+                                args['page'],
+                                args['limit'],
+                                error_out=False)
 
                     return {
                         "count": len(items.items),
@@ -285,7 +310,14 @@ class ItemResource(Resource):
                         "/items?page={}&limit={}"
                         .format(id, args['page'] - 1, args['limit']),
                         "items": marshal(items.items,
-                                         item_fields)}, 200
+                                            item_fields)}, 200
+
+                else:
+                    items = Item.query.filter(
+                        Item.bucket_id == bucketlist.id
+                    ).order_by(Item.id.asc()).all()
+
+                    return {"items": marshal(items, item_fields)}, 200
 
         else:
             return {'message': 'bucketlist does not exist'}, 404
