@@ -119,7 +119,9 @@ class BucketlistResource(Resource):
                         return {'message': 'Page does not exist'}, 404
                     else:
                         bucketlists = result.paginate(
-                            args['page'], args['limit'], error_out=False)
+                            args['page'],
+                            args['limit'],
+                            error_out=False)
 
                     if len(bucketlists.items) < 1:
                         return {
@@ -265,7 +267,6 @@ class ItemResource(Resource):
 
                     items = None
 
-
                     if args['q']:
                         result = Item.query.filter(
                             Item.bucket_id == bucketlist.id,
@@ -279,7 +280,9 @@ class ItemResource(Resource):
                             return {'message': 'Page does not exist'}, 404
                         else:
                             items = result.paginate(
-                                args['page'], args['limit'], error_out=False)
+                                args['page'],
+                                args['limit'],
+                                error_out=False)
 
                         if len(items.items) < 1:
                             return {
@@ -292,9 +295,12 @@ class ItemResource(Resource):
                         ).order_by(Item.id.asc())
 
                         if int(args['page']) > (
-                                len(result.all()) / int(args['limit']) + 1
+                                len(result.all()) / int(
+                                    args['limit']) + 1
                         ) or int(args['page']) < 1:
-                            return {'message': 'Page does not exist'}, 404
+                            return {
+                                'message': 'Page does not exist'
+                            }, 404
                         else:
                             items = result.paginate(
                                 args['page'],
@@ -310,7 +316,7 @@ class ItemResource(Resource):
                         "/items?page={}&limit={}"
                         .format(id, args['page'] - 1, args['limit']),
                         "items": marshal(items.items,
-                                            item_fields)}, 200
+                                         item_fields)}, 200
 
                 else:
                     items = Item.query.filter(
