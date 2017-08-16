@@ -107,13 +107,21 @@ class BucketlistResource(Resource):
                 bucketlists = None
 
                 if args['q']:
-                    bucketlists = Bucketlist.query.filter(
+                    result = Bucketlist.query.filter(
                         Bucketlist.owner_id == (
                             current_identity['user_id']),
                         Bucketlist.name.contains(args['q'])
-                    ).order_by(
-                        Bucketlist.id.asc()).paginate(
+                    ).order_by(Bucketlist.id.asc())
+
+                    if int(args['page']) > (
+                            len(result.all()) / int(args['limit']) + 1
+                            ) or int(args['page']) < 1:
+                        return {'message': 'Page does not exist'}, 404
+                    else:
+                        bucketlists = result.paginate(
                         args['page'], args['limit'], error_out=False)
+
+
                     if len(bucketlists.items) < 1:
                         return {
                             'message': 'Bucketlist does not exist'
