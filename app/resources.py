@@ -14,13 +14,10 @@ api = Api(app, prefix='/api/v1')
 def verify(username, password):
     if not (username and password):
         return False
-    else:
-        user = User.query.filter_by(username=username).first()
-        if user:
-            if bcrypt.verify(password, user.password):
-                return user
-        else:
-            return False
+    user = User.query.filter_by(username=username).first()
+    if user and bcrypt.verify(password, user.password):
+        return user
+    return False
 
 
 def identity(payload):
@@ -59,13 +56,10 @@ class UserResource(Resource):
                     return {
                         'message': 'user successfully registered!'
                     }, 201
-                else:
-                    return {'message': 'password should match '
-                                       'confirm password'}, 400
-            else:
-                return {'message': 'email is required'}, 400
-        else:
-            return {'message': 'username is required'}, 400
+                return {'message': 'password should match '
+                        'confirm password'}, 400
+            return {'message': 'email is required'}, 400
+        return {'message': 'username is required'}, 400
 
 
 class BucketlistResource(Resource):
@@ -86,79 +80,74 @@ class BucketlistResource(Resource):
                 id=id).first()
             if bucketlist is not None:
                 return marshal(bucketlist, bucketlist_fields)
-            else:
-                return {'message': 'requested id does not exist'}, 404
-        else:
-            if request.args:
-                parser = reqparse.RequestParser()
-                parser.add_argument('page',
-                                    type=int,
-                                    default=1,
-                                    location='args')
-                parser.add_argument('limit',
-                                    type=int,
-                                    default=10,
-                                    location='args')
-                parser.add_argument('q',
-                                    type=str,
-                                    location='args')
-                args = parser.parse_args(strict=True)
+            return {'message': 'requested id does not exist'}, 404
+        if request.args:
+            parser = reqparse.RequestParser()
+            parser.add_argument('page',
+                                type=int,
+                                default=1,
+                                location='args')
+            parser.add_argument('limit',
+                                type=int,
+                                default=10,
+                                location='args')
+            parser.add_argument('q',
+                                type=str,
+                                location='args')
+            args = parser.parse_args(strict=True)
 
-                bucketlists = None
+            if args['q']:
+                result = Bucketlist.query.filter(
+                    Bucketlist.owner_id == (
+                        current_identity['user_id']),
+                    Bucketlist.name.contains(args['q'])
+                ).order_by(Bucketlist.id.asc())
 
-                if args['q']:
-                    result = Bucketlist.query.filter(
-                        Bucketlist.owner_id == (
-                            current_identity['user_id']),
-                        Bucketlist.name.contains(args['q'])
-                    ).order_by(Bucketlist.id.asc())
+                if int(args['page']) > (
+                        len(result.all()) / int(args['limit']) + 1
+                ) or int(args['page']) < 1:
+                    return {'message': 'Page does not exist'}, 404
 
-                    if int(args['page']) > (
-                            len(result.all()) / int(args['limit']) + 1
-                    ) or int(args['page']) < 1:
-                        return {'message': 'Page does not exist'}, 404
-                    else:
-                        bucketlists = result.paginate(
-                            args['page'],
-                            args['limit'],
-                            error_out=False)
+                bucketlists = result.paginate(
+                    args['page'],
+                    args['limit'],
+                    error_out=False)
 
-                    if len(bucketlists.items) < 1:
-                        return {
-                            'message': 'Bucketlist does not exist'
-                        }, 404
+                if len(bucketlists.items) < 1:
+                    return {
+                        'message': 'Bucketlist does not exist'
+                    }, 404
 
-                else:
-                    result = Bucketlist.query.filter(
-                        Bucketlist.owner_id == (
-                            current_identity['user_id'])
-                    ).order_by(
-                        Bucketlist.id.asc())
-                    if int(args['page']) > (
-                            len(result.all()) / int(args['limit']) + 1
-                    ) or int(args['page']) < 1:
-                        return {'message': 'Page does not exist'}, 404
-                    else:
-                        bucketlists = result.paginate(
-                            args['page'],
-                            args['limit'],
-                            error_out=False)
+            result = Bucketlist.query.filter(
+                Bucketlist.owner_id == (
+                    current_identity['user_id'])
+            ).order_by(
+                Bucketlist.id.asc())
 
-                return {
-                    "count": len(bucketlists.items),
-                    "next": "/api/v1/bucketlists?page={}&limit={}"
-                    .format(args['page'] + 1, args['limit']),
-                    "previous": "/api/v1/bucketlists?page={}&limit={}"
-                    .format(args['page'] - 1, args['limit']),
-                    "bucketlists": marshal(bucketlists.items,
-                                           bucketlist_fields)}, 200
+            if int(args['page']) > (
+                    len(result.all()) / int(args['limit']) + 1
+            ) or int(args['page']) < 1:
+                return {'message': 'Page does not exist'}, 404
 
-            else:
-                bucketlists = Bucketlist.query.order_by(
-                    Bucketlist.id.asc()).filter_by(
-                    owner_id=current_identity['user_id']).all()
-                return {"bucketlists": marshal(bucketlists,
-                                               bucketlist_fields)}, 200
+            bucketlists = result.paginate(
+                args['page'],
+                args['limit'],
+                error_out=False)
+
+            return {
+                "count": len(bucketlists.items),
+                "next": "/api/v1/bucketlists?page={}&limit={}"
+                .format(args['page'] + 1, args['limit']),
+                "previous": "/api/v1/bucketlists?page={}&limit={}"
+                .format(args['page'] - 1, args['limit']),
+                "bucketlists": marshal(bucketlists.items,
+                                        bucketlist_fields)}, 200
+
+        bucketlists = Bucketlist.query.order_by(
+            Bucketlist.id.asc()).filter_by(
+            owner_id=current_identity['user_id']).all()
+        return {"bucketlists": marshal(bucketlists,
+                                        bucketlist_fields)}, 200
 
     @jwt_required()
     def post(self):
@@ -172,13 +161,14 @@ class BucketlistResource(Resource):
         if len(args['name'].strip()) == 0 or len(
                 args['description'].strip()) == 0:
             return {'message': 'empty strings not allowed'}, 400
-        else:
-            new_bucketlist = Bucketlist(
-                args['name'], args['description'],
-                current_identity['user_id'])
-            db.session.add(new_bucketlist)
-            db.session.commit()
-            return {'message': 'bucketlist created successfully'}, 201
+
+        new_bucketlist = Bucketlist(
+            args['name'], args['description'],
+            current_identity['user_id'])
+        db.session.add(new_bucketlist)
+        db.session.commit()
+
+        return {'message': 'bucketlist created successfully'}, 201
 
     @jwt_required()
     def put(self, id):
@@ -197,17 +187,17 @@ class BucketlistResource(Resource):
             if len(args['name'].strip()) == 0 or len(
                     args['description'].strip()) == 0:
                 return {'message': 'empty strings not allowed'}, 400
-            else:
-                bucketlist.name = args['name']
-                bucketlist.description = args['description']
 
-                db.session.merge(bucketlist)
-                db.session.commit()
-                return {
-                    'message': 'bucketlist updated successfully'
-                }, 200
-        else:
-            return {'message': 'does not exist'}, 404
+            bucketlist.name = args['name']
+            bucketlist.description = args['description']
+
+            db.session.merge(bucketlist)
+            db.session.commit()
+            return {
+                'message': 'bucketlist updated successfully'
+            }, 200
+
+        return {'message': 'does not exist'}, 404
 
     @jwt_required()
     def delete(self, id):
@@ -218,10 +208,10 @@ class BucketlistResource(Resource):
             db.session.delete(bucketlist)
             db.session.commit()
             return {'message': 'bucketlist deleted successfully'}, 200
-        else:
-            return {
-                'message': 'cannot delete non-existent bucketlist'
-            }, 404
+
+        return {
+            'message': 'cannot delete non-existent bucketlist'
+        }, 404
 
 
 class ItemResource(Resource):
@@ -247,86 +237,81 @@ class ItemResource(Resource):
                                             id=item_id).first()
                 if item:
                     return marshal(item, item_fields), 200
-                else:
-                    return {'message': 'item does not exist'}, 404
-            else:
-                if request.args:
-                    parser = reqparse.RequestParser()
-                    parser.add_argument('page',
-                                        type=int,
-                                        default=1,
-                                        location='args')
-                    parser.add_argument('limit',
-                                        type=int,
-                                        default=10,
-                                        location='args')
-                    parser.add_argument('q',
-                                        type=str,
-                                        location='args')
-                    args = parser.parse_args(strict=True)
 
-                    items = None
+                return {'message': 'item does not exist'}, 404
 
-                    if args['q']:
-                        result = Item.query.filter(
-                            Item.bucket_id == bucketlist.id,
-                            Item.title.contains(args['q'])
-                        ).order_by(
-                            Item.id.asc())
+            if request.args:
+                parser = reqparse.RequestParser()
+                parser.add_argument('page',
+                                    type=int,
+                                    default=1,
+                                    location='args')
+                parser.add_argument('limit',
+                                    type=int,
+                                    default=10,
+                                    location='args')
+                parser.add_argument('q',
+                                    type=str,
+                                    location='args')
+                args = parser.parse_args(strict=True)
 
-                        if int(args['page']) > (
-                                len(result.all()) / int(args['limit']) + 1
-                        ) or int(args['page']) < 1:
-                            return {'message': 'Page does not exist'}, 404
-                        else:
-                            items = result.paginate(
-                                args['page'],
-                                args['limit'],
-                                error_out=False)
+                if args['q']:
+                    result = Item.query.filter(
+                        Item.bucket_id == bucketlist.id,
+                        Item.title.contains(args['q'])
+                    ).order_by(
+                        Item.id.asc())
 
-                        if len(items.items) < 1:
-                            return {
-                                'message': 'Item does not exist'
-                            }, 404
+                    if int(args['page']) > (
+                            len(result.all()) / int(args['limit']) + 1
+                    ) or int(args['page']) < 1:
+                        return {'message': 'Page does not exist'}, 404
 
-                    else:
-                        result = Item.query.filter(
-                            Item.bucket_id == bucketlist.id
-                        ).order_by(Item.id.asc())
+                    items = result.paginate(
+                        args['page'],
+                        args['limit'],
+                        error_out=False)
 
-                        if int(args['page']) > (
-                                len(result.all()) / int(
-                                    args['limit']) + 1
-                        ) or int(args['page']) < 1:
-                            return {
-                                'message': 'Page does not exist'
-                            }, 404
-                        else:
-                            items = result.paginate(
-                                args['page'],
-                                args['limit'],
-                                error_out=False)
+                    if len(items.items) < 1:
+                        return {
+                            'message': 'Item does not exist'
+                        }, 404
 
+                result = Item.query.filter(
+                    Item.bucket_id == bucketlist.id
+                ).order_by(Item.id.asc())
+
+                if int(args['page']) > (
+                        len(result.all()) / int(
+                            args['limit']) + 1
+                ) or int(args['page']) < 1:
                     return {
-                        "count": len(items.items),
-                        "next": "/api/v1/bucketlists/{}"
-                        "/items?page={}&limit={}"
-                        .format(id, args['page'] + 1, args['limit']),
-                        "previous": "/api/v1/bucketlists/{}"
-                        "/items?page={}&limit={}"
-                        .format(id, args['page'] - 1, args['limit']),
-                        "items": marshal(items.items,
-                                         item_fields)}, 200
+                        'message': 'Page does not exist'
+                    }, 404
 
-                else:
-                    items = Item.query.filter(
-                        Item.bucket_id == bucketlist.id
-                    ).order_by(Item.id.asc()).all()
+                items = result.paginate(
+                    args['page'],
+                    args['limit'],
+                    error_out=False)
 
-                    return {"items": marshal(items, item_fields)}, 200
+                return {
+                    "count": len(items.items),
+                    "next": "/api/v1/bucketlists/{}"
+                    "/items?page={}&limit={}"
+                    .format(id, args['page'] + 1, args['limit']),
+                    "previous": "/api/v1/bucketlists/{}"
+                    "/items?page={}&limit={}"
+                    .format(id, args['page'] - 1, args['limit']),
+                    "items": marshal(items.items,
+                                        item_fields)}, 200
 
-        else:
-            return {'message': 'bucketlist does not exist'}, 404
+            items = Item.query.filter(
+                Item.bucket_id == bucketlist.id
+            ).order_by(Item.id.asc()).all()
+
+            return {"items": marshal(items, item_fields)}, 200
+
+        return {'message': 'bucketlist does not exist'}, 404
 
     @jwt_required()
     def post(self, id):
@@ -340,21 +325,21 @@ class ItemResource(Resource):
         if len(args['title'].strip()) == 0 or len(
                 args['description'].strip()) == 0:
             return {'message': 'empty strings not allowed'}, 400
-        else:
-            bucketlist = Bucketlist.query.filter_by(
-                id=id,
-                owner_id=current_identity['user_id']
-            ).first()
-            if bucketlist:
-                new_item = Item(args['title'], args['description'],
-                                bucketlist.id)
-                db.session.add(new_item)
-                db.session.commit()
-                return {'message': 'item created successfully'}, 201
-            else:
-                return {
-                    'message': 'Invalid bucketlist id'
-                }, 401
+
+        bucketlist = Bucketlist.query.filter_by(
+            id=id,
+            owner_id=current_identity['user_id']
+        ).first()
+        if bucketlist:
+            new_item = Item(args['title'], args['description'],
+                            bucketlist.id)
+            db.session.add(new_item)
+            db.session.commit()
+            return {'message': 'item created successfully'}, 201
+
+        return {
+            'message': 'Invalid bucketlist id'
+        }, 401
 
     @jwt_required()
     def put(self, id, item_id):
@@ -380,18 +365,18 @@ class ItemResource(Resource):
                     return {
                         'message': 'empty strings not allowed'
                     }, 400
-                else:
-                    item.title = args['title']
-                    item.description = args['description']
-                    db.session.merge(item)
-                    db.session.commit()
-                    return {
-                        'message': 'item updated successfully'
-                    }, 200
-            else:
-                return {'message': 'item does not exist'}, 404
-        else:
-            return {'message': 'Invalid bucketlist id'}, 404
+
+                item.title = args['title']
+                item.description = args['description']
+                db.session.merge(item)
+                db.session.commit()
+                return {
+                    'message': 'item updated successfully'
+                }, 200
+
+            return {'message': 'item does not exist'}, 404
+
+        return {'message': 'Invalid bucketlist id'}, 404
 
     @jwt_required()
     def delete(self, id, item_id):
@@ -406,12 +391,12 @@ class ItemResource(Resource):
                 db.session.delete(item)
                 db.session.commit()
                 return {'message': 'item deleted successfully'}, 200
-            else:
-                return {
-                    'message': 'cannot delete, item does not exist'
-                }, 404
-        else:
-            return {'message': 'Invalid bucketlist id'}, 404
+
+            return {
+                'message': 'cannot delete, item does not exist'
+            }, 404
+
+        return {'message': 'Invalid bucketlist id'}, 404
 
 
 api.add_resource(UserResource, '/auth/register')
