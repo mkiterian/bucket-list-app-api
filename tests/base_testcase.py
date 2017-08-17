@@ -25,7 +25,10 @@ class BaseTest(unittest.TestCase):
         #define an existing user
         self.saved_user = User("tyrion", "tyrion@gmail.com",
                                bcrypt.hash("lion", rounds=12))
+        self.saved_user_2 = User("theon", "theon@gmail.com",
+                               bcrypt.hash("qwerty", rounds=12))
         db.session.add(self.saved_user)
+        db.session.add(self.saved_user_2)
         db.session.commit()        
 
     def tearDown(self):
