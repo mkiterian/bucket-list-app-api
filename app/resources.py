@@ -97,11 +97,15 @@ class BucketlistResource(Resource):
             args = parser.parse_args(strict=True)
 
             if args['q']:
+                print(args['q'])
                 result = Bucketlist.query.filter(
                     Bucketlist.owner_id == (
                         current_identity['user_id']),
                     Bucketlist.name.contains(args['q'])
                 ).order_by(Bucketlist.id.asc())
+
+                print(result)
+                print('*' * 40)
 
                 if int(args['page']) > (
                         len(result.all()) / int(args['limit']) + 1
@@ -113,10 +117,21 @@ class BucketlistResource(Resource):
                     args['limit'],
                     error_out=False)
 
+                print(bucketlists)
+
                 if len(bucketlists.items) < 1:
                     return {
                         'message': 'Bucketlist does not exist'
                     }, 404
+                else:
+                    return {
+                        "count": len(bucketlists.items),
+                        "next": "/api/v1/bucketlists?page={}&limit={}"
+                        .format(args['page'] + 1, args['limit']),
+                        "previous": "/api/v1/bucketlists?page={}&limit={}"
+                        .format(args['page'] - 1, args['limit']),
+                        "bucketlists": marshal(bucketlists.items,
+                                               bucketlist_fields)}, 200
 
             result = Bucketlist.query.filter(
                 Bucketlist.owner_id == (
@@ -141,13 +156,13 @@ class BucketlistResource(Resource):
                 "previous": "/api/v1/bucketlists?page={}&limit={}"
                 .format(args['page'] - 1, args['limit']),
                 "bucketlists": marshal(bucketlists.items,
-                                        bucketlist_fields)}, 200
+                                       bucketlist_fields)}, 200
 
         bucketlists = Bucketlist.query.order_by(
             Bucketlist.id.asc()).filter_by(
             owner_id=current_identity['user_id']).all()
         return {"bucketlists": marshal(bucketlists,
-                                        bucketlist_fields)}, 200
+                                       bucketlist_fields)}, 200
 
     @jwt_required()
     def post(self):
@@ -303,7 +318,7 @@ class ItemResource(Resource):
                     "/items?page={}&limit={}"
                     .format(id, args['page'] - 1, args['limit']),
                     "items": marshal(items.items,
-                                        item_fields)}, 200
+                                     item_fields)}, 200
 
             items = Item.query.filter(
                 Item.bucket_id == bucketlist.id
