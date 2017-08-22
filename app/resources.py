@@ -45,9 +45,16 @@ class UserResource(Resource):
                             required=True, location='json')
 
         args = parser.parse_args(strict=True)
+
         if args['username']:
             if args['email']:
                 if args['password'] == args['confirm_password']:
+                    user_exists = User.query.filter_by(username=args['username'])
+                    if user_exists:
+                        return {
+                        'message': 'username {} taken, please try another'.format(args['username'])
+                    }, 409
+
                     hash = bcrypt.hash(args['password'], rounds=12)
                     user = User(args['username'],
                                 args['email'], hash)
@@ -118,21 +125,22 @@ class BucketlistResource(Resource):
                         'message': 'Bucketlist does not exist'
                     }, 404
 
-            result = Bucketlist.query.filter(
-                Bucketlist.owner_id == (
-                    current_identity['user_id'])
-            ).order_by(
-                Bucketlist.id.asc())
+            else:
+                result = Bucketlist.query.filter(
+                    Bucketlist.owner_id == (
+                        current_identity['user_id'])
+                ).order_by(
+                    Bucketlist.id.asc())
 
-            if int(args['page']) > (
-                    len(result.all()) / int(args['limit']) + 1
-            ) or int(args['page']) < 1:
-                return {'message': 'Page does not exist'}, 404
+                if int(args['page']) > (
+                        len(result.all()) / int(args['limit']) + 1
+                ) or int(args['page']) < 1:
+                    return {'message': 'Page does not exist'}, 404
 
-            bucketlists = result.paginate(
-                args['page'],
-                args['limit'],
-                error_out=False)
+                bucketlists = result.paginate(
+                    args['page'],
+                    args['limit'],
+                    error_out=False)
 
             return {
                 "count": len(bucketlists.items),
@@ -141,13 +149,13 @@ class BucketlistResource(Resource):
                 "previous": "/api/v1/bucketlists?page={}&limit={}"
                 .format(args['page'] - 1, args['limit']),
                 "bucketlists": marshal(bucketlists.items,
-                                        bucketlist_fields)}, 200
+                                       bucketlist_fields)}, 200
 
         bucketlists = Bucketlist.query.order_by(
             Bucketlist.id.asc()).filter_by(
             owner_id=current_identity['user_id']).all()
         return {"bucketlists": marshal(bucketlists,
-                                        bucketlist_fields)}, 200
+                                       bucketlist_fields)}, 200
 
     @jwt_required()
     def post(self):
@@ -197,7 +205,7 @@ class BucketlistResource(Resource):
                 'message': 'bucketlist updated successfully'
             }, 200
 
-        return {'message': 'does not exist'}, 404
+        return {'message': 'bucketlist does not exist'}, 404
 
     @jwt_required()
     def delete(self, id):
@@ -277,6 +285,17 @@ class ItemResource(Resource):
                             'message': 'Item does not exist'
                         }, 404
 
+                    return {
+                        "count": len(items.items),
+                        "next": "/api/v1/bucketlists/{}"
+                        "/items?page={}&limit={}"
+                        .format(id, args['page'] + 1, args['limit']),
+                        "previous": "/api/v1/bucketlists/{}"
+                        "/items?page={}&limit={}"
+                        .format(id, args['page'] - 1, args['limit']),
+                        "items": marshal(items.items,
+                                         item_fields)}, 200
+
                 result = Item.query.filter(
                     Item.bucket_id == bucketlist.id
                 ).order_by(Item.id.asc())
@@ -303,7 +322,7 @@ class ItemResource(Resource):
                     "/items?page={}&limit={}"
                     .format(id, args['page'] - 1, args['limit']),
                     "items": marshal(items.items,
-                                        item_fields)}, 200
+                                     item_fields)}, 200
 
             items = Item.query.filter(
                 Item.bucket_id == bucketlist.id
