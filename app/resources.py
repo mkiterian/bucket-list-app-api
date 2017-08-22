@@ -49,7 +49,7 @@ class UserResource(Resource):
         if args['username']:
             if args['email']:
                 if args['password'] == args['confirm_password']:
-                    user_exists = User.query.filter_by(username=args['username'])
+                    user_exists = User.query.filter_by(username=args['username']).first()
                     if user_exists:
                         return {
                         'message': 'username {} taken, please try another'.format(args['username'])
