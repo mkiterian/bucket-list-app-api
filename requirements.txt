@@ -7,12 +7,12 @@ cffi==1.10.0
 click==6.7
 coverage==4.4.1
 Flask==0.12.2
+Flask-Cors==3.0.3
 Flask-JWT==0.3.2
 Flask-Migrate==2.0.4
 Flask-RESTful==0.3.6
 Flask-Script==2.0.5
 Flask-SQLAlchemy==2.2
-gunicorn==19.7.1
 isort==4.2.15
 itsdangerous==0.24
 Jinja2==2.9.6
