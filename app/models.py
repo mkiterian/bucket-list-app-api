@@ -11,7 +11,8 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(120), nullable=False)
     bucketlists = db.relationship(
-        'Bucketlist', backref='user', lazy='dynamic')
+        'Bucketlist', backref='user', lazy='dynamic',
+        cascade='all, delete-orphan')
 
     def __init__(self, username, email, password):
         self.username = username
@@ -32,7 +33,7 @@ class Bucketlist(db.Model):
     description = db.Column(db.String(200))
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     items = db.relationship(
-        'Item', backref='bucketlist', lazy='dynamic')
+        'Item', backref='bucketlist', cascade="all, delete-orphan", lazy='dynamic')
 
     def __init__(self, name, description, owner_id):
         self.name = name
