@@ -28,6 +28,20 @@ def identity(payload):
 jwt = JWT(app, verify, identity)
 
 
+# Helpers
+
+
+def bucketlist_exists(name, owner):
+    bucketlist = Bucketlist.query.filter_by(
+        name=name, owner_id=owner).first()
+    return bucketlist
+
+
+def item_exists(title, bucketlist):
+    item = Item.query.filter_by(title=title, bucket_id=bucketlist.id).first()
+    return item
+
+
 class UserResource(Resource):
     '''
     Defines handlers for get, post and put user requests
@@ -47,13 +61,20 @@ class UserResource(Resource):
         args = parser.parse_args(strict=True)
 
         if args['username']:
+            user_exists = User.query.filter_by(
+                username=args['username']).first()
+            if user_exists:
+                return {
+                    'message': 'username {} taken, please try another'.format(args['username'])
+                }, 409
             if args['email']:
-                if args['password'] == args['confirm_password']:
-                    user_exists = User.query.filter_by(username=args['username']).first()
-                    if user_exists:
-                        return {
-                        'message': 'username {} taken, please try another'.format(args['username'])
+                email_exists = User.query.filter_by(
+                    email=args['email']).first()
+                if email_exists:
+                    return {
+                        'message': 'The email address is already in use'
                     }, 409
+                if args['password'] == args['confirm_password']:
 
                     hash = bcrypt.hash(args['password'], rounds=12)
                     user = User(args['username'],
@@ -169,7 +190,8 @@ class BucketlistResource(Resource):
         if len(args['name'].strip()) == 0 or len(
                 args['description'].strip()) == 0:
             return {'message': 'empty strings not allowed'}, 400
-
+        if bucketlist_exists(args['name'], current_identity['user_id']):
+            return {'message': 'Bucketlist name already in use'}, 409
         new_bucketlist = Bucketlist(
             args['name'], args['description'],
             current_identity['user_id'])
@@ -350,6 +372,9 @@ class ItemResource(Resource):
             owner_id=current_identity['user_id']
         ).first()
         if bucketlist:
+            if item_exists(args['title'], bucketlist):
+                return {'message': 'Item title already in this bucketlist'}, 409
+
             new_item = Item(args['title'], args['description'],
                             bucketlist.id)
             db.session.add(new_item)
