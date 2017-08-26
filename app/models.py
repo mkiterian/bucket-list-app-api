@@ -29,7 +29,7 @@ class Bucketlist(db.Model):
     '''
     __tablename__ = 'bucketlists'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(200))
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     items = db.relationship(
@@ -50,7 +50,7 @@ class Item(db.Model):
     '''
     __tablename__ = 'items'
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(80), unique=True, nullable=False)
+    title = db.Column(db.String(80), nullable=False)
     description = db.Column(db.String(200))
     bucket_id = db.Column(db.Integer, db.ForeignKey('bucketlists.id'))
 
